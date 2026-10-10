@@ -73,3 +73,8 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Env (server URL, client IDs) — keep .env.example tracked
+.env
+.env*.local
+!.env.example

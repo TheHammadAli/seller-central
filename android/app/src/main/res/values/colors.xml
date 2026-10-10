@@ -1,0 +1,4 @@
+<resources>
+    <!-- Fazl teal: the window shows this before the app draws, so launch never flashes white. -->
+    <color name="splash_background">#007781</color>
+</resources>

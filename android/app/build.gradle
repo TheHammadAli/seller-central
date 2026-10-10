@@ -1,6 +1,12 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+// Push notifications need this app's google-services.json from Fazl's Firebase
+// project (market-app-notification, Android app com.fazlapp.sellercenter).
+// Without it the app still builds and runs, just without push.
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+}
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -84,6 +90,10 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // Maps SDK key for react-native-maps (the store pin on Create shop): the
+        // same MAPS_API_KEY as the Fazl app, from ~/.gradle/gradle.properties,
+        // never committed. Without it the map shows grey.
+        manifestPlaceholders["MAPS_API_KEY"] = project.hasProperty("MAPS_API_KEY") ? MAPS_API_KEY : ""
     }
     signingConfigs {
         debug {

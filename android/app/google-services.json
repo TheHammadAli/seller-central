@@ -1,0 +1,288 @@
+{
+  "project_info": {
+    "project_number": "1042475957024",
+    "project_id": "market-app-notification",
+    "storage_bucket": "market-app-notification.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042475957024:android:d5b3f88a433bd83540f545",
+        "android_client_info": {
+          "package_name": "com.fazlapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1042475957024-9cc3lg0i5jsi5fslr8avl1nmfgne4vme.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fazlapp",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb_H_elb5nMSBkomXHS_sC-LSfkhypw9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1042475957024-rtdpmdu4hpofksph8i3kt891de5c1pdd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fazl.app",
+                "app_store_id": "6776594676"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042475957024:android:a88692f514c14f3640f545",
+        "android_client_info": {
+          "package_name": "com.fazlapp.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1042475957024-1r3nr35d7ugegsrnk6k5kscds6sve78o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fazlapp.app",
+            "certificate_hash": "7ccbb6889ea5fa8c95de0206aff0f0a3aacb7ebf"
+          }
+        },
+        {
+          "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb_H_elb5nMSBkomXHS_sC-LSfkhypw9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1042475957024-rtdpmdu4hpofksph8i3kt891de5c1pdd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fazl.app",
+                "app_store_id": "6776594676"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042475957024:android:0943d16680982f2b40f545",
+        "android_client_info": {
+          "package_name": "com.fazlapp.sellercenter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb_H_elb5nMSBkomXHS_sC-LSfkhypw9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1042475957024-rtdpmdu4hpofksph8i3kt891de5c1pdd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fazl.app",
+                "app_store_id": "6776594676"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042475957024:android:b2f0b9625b5f059b40f545",
+        "android_client_info": {
+          "package_name": "com.market"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb_H_elb5nMSBkomXHS_sC-LSfkhypw9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1042475957024-rtdpmdu4hpofksph8i3kt891de5c1pdd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fazl.app",
+                "app_store_id": "6776594676"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042475957024:android:d64187ba4583a88340f545",
+        "android_client_info": {
+          "package_name": "fazl.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1042475957024-cngc9v5h3t89c3ebp9sv0ga1rfrfbdj0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fazl.com",
+            "certificate_hash": "7ccbb6889ea5fa8c95de0206aff0f0a3aacb7ebf"
+          }
+        },
+        {
+          "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb_H_elb5nMSBkomXHS_sC-LSfkhypw9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1042475957024-rtdpmdu4hpofksph8i3kt891de5c1pdd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fazl.app",
+                "app_store_id": "6776594676"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042475957024:android:833a23acad16989640f545",
+        "android_client_info": {
+          "package_name": "fazlapp.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1042475957024-1d21mrpejajcg0gcakb3afun8gsndf16.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fazlapp.com",
+            "certificate_hash": "b099f2138e9a1690329721c33cc6b09049f18bdc"
+          }
+        },
+        {
+          "client_id": "1042475957024-dchevrf8f4jcsdapk4km7pu4vfdu6a3b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fazlapp.com",
+            "certificate_hash": "639238759d6541cf8c8a8fc4e355244eae91c1b1"
+          }
+        },
+        {
+          "client_id": "1042475957024-rq9idnagrfjt6mf12hgvs7nj92ssbfdm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fazlapp.com",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "1042475957024-u4b28n6see0hh2sdjsrfns3rlrv3ns6i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fazlapp.com",
+            "certificate_hash": "d2f5f5696bda9398bda0a39cfde9f5be9684b059"
+          }
+        },
+        {
+          "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb_H_elb5nMSBkomXHS_sC-LSfkhypw9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1042475957024-0numv5030o3d10qd55s90i077i7c5b2f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1042475957024-rtdpmdu4hpofksph8i3kt891de5c1pdd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fazl.app",
+                "app_store_id": "6776594676"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
