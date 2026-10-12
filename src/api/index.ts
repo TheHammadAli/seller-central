@@ -22,7 +22,8 @@ import {
 } from '../utils/orders';
 import { stockState } from '../utils/products';
 import * as db from './mockData';
-import { getShopOrder, listShopOrders, setShopOrderStatus } from './orders';
+import { getShopOrder, listShopOrders, setShopOrderStatus, StatusDetails } from './orders';
+export type { StatusDetails } from './orders';
 import { listCampaigns } from './campaigns';
 export { listCampaigns, getCampaign, saveCampaign, setCampaignStatus } from './campaigns';
 export type { CampaignInput } from './campaigns';
@@ -116,13 +117,15 @@ export function getOrder(shopId: string, id: string): Promise<Order> {
   return getShopOrder(shopId, id);
 }
 
-/** Moves a real order on one step (see orderActions); the customer is told on Fazl. */
+/** Moves a real order on one step (see orderActions); the customer is told on
+ *  Fazl. A return carries its reason, a refund the amount paid back. */
 export function updateOrderStatus(
   shopId: string,
   id: string,
   status: OrderStatus,
+  details?: StatusDetails,
 ): Promise<Order> {
-  return setShopOrderStatus(shopId, id, status);
+  return setShopOrderStatus(shopId, id, status, details);
 }
 
 // Riders and couriers aren't on Fazl yet: these still work on the sample

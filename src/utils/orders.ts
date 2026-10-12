@@ -112,8 +112,9 @@ export type OrderAction =
 /**
  * The buttons an order shows, first one being the main next step. Only the
  * steps Fazl has (src/api/orders.ts): accept or reject a new order, ship or
- * cancel an accepted one, then mark it delivered. The rider, courier and
- * returns steps below wait for those to be on Fazl.
+ * cancel an accepted one, mark it delivered; then, if the customer sends it
+ * back, mark it returned and refund them. The rider and courier steps below
+ * wait for those to be on Fazl.
  */
 export function orderActions(o: Order): OrderAction[] {
   if (o.fulfilment) {
@@ -142,6 +143,10 @@ export function orderActions(o: Order): OrderAction[] {
             tone: 'primary',
           },
         ];
+      case 'delivered':
+        return [{ kind: 'status', label: t('Mark as returned'), next: 'returned', tone: 'outline' }];
+      case 'returned':
+        return [{ kind: 'status', label: t('Refund customer'), next: 'refunded', tone: 'primary' }];
       default:
         return [];
     }

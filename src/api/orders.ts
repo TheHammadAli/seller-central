@@ -1,15 +1,23 @@
 // The shop's real orders on Fazl, as Seller Central shows them. An order on
 // Fazl is one product (a cart becomes one order per product) and moves
-// pending → confirmed → shipped → delivered, or cancelled before it ships;
-// the app's own wording for those steps is New → Accepted → Shipped →
-// Delivered / Cancelled. Riders, couriers, returns and refunds aren't on Fazl
-// yet, so a real order never reaches those steps.
+// pending → confirmed → shipped → delivered, or cancelled before it ships; a
+// delivered one the customer sends back is returned, then refunded. The app's
+// own wording for those steps is New → Accepted → Shipped → Delivered /
+// Cancelled → Returned → Refunded. Riders and couriers aren't on Fazl yet, so
+// a real order never reaches those steps.
 import { Order, OrderStatus } from '../types/models';
 import { api } from './http';
 import { LocalizedName, nameOf } from './session';
 import { t } from '../i18n';
 
-type BackendStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+type BackendStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'returned'
+  | 'refunded';
 
 interface BackendOrder {
   id: string;
@@ -25,6 +33,12 @@ interface BackendOrder {
   /** Where to deliver it, as the buyer confirmed at checkout (older orders: none). */
   deliveryAddress?: string | null;
   paymentType: 'cashonDelivery' | 'Easypaisa';
+  /** Why it came back, and when (returned and refunded orders). */
+  returnReason?: string | null;
+  returnedAt?: string | null;
+  /** What the seller paid back, and when (refunded orders). */
+  refundAmount?: number | null;
+  refundedAt?: string | null;
   productId: string;
   product?: { id: string; title: LocalizedName; images?: string[] | null } | null;
   buyer?: {
@@ -42,6 +56,8 @@ const FROM_BACKEND: Record<BackendStatus, OrderStatus> = {
   shipped: 'shipped',
   delivered: 'delivered',
   cancelled: 'cancelled',
+  returned: 'returned',
+  refunded: 'refunded',
 };
 
 const TO_BACKEND: Partial<Record<OrderStatus, BackendStatus>> = {
@@ -49,7 +65,21 @@ const TO_BACKEND: Partial<Record<OrderStatus, BackendStatus>> = {
   shipped: 'shipped',
   delivered: 'delivered',
   cancelled: 'cancelled',
+  returned: 'returned',
+  refunded: 'refunded',
 };
+
+/** When the order reached each step Fazl keeps the time of: placed, and
+ *  returned / refunded; any other step is the order's last change. */
+function historyOf(o: BackendOrder, status: OrderStatus): Order['history'] {
+  const history: Order['history'] = [{ status: 'new', at: o.createdAt }];
+  if (o.returnedAt) history.push({ status: 'returned', at: o.returnedAt });
+  if (o.refundedAt) history.push({ status: 'refunded', at: o.refundedAt });
+  if (status !== 'new' && !history.some(h => h.status === status)) {
+    history.push({ status, at: o.updatedAt });
+  }
+  return history;
+}
 
 /** A listing photo's small card version, when it has one (photos since WebP). */
 const cardImage = (url?: string) => url?.replace(/__full\.webp$/, '__card.webp');
@@ -91,14 +121,12 @@ function toOrder(o: BackendOrder): Order {
     deliveryCharge: 0,
     discount: 0,
     fazlCharge: 0,
-    refund: 0,
+    // What was paid back; it comes off the seller's earnings.
+    refund: o.refundAmount ?? 0,
     delivery: { type: 'local' },
     fulfilment: o.deliveryOption === 'self-pickup' ? 'pickup' : 'delivery',
-    // Fazl keeps when an order was placed and when it last changed.
-    history: [
-      { status: 'new', at: o.createdAt },
-      ...(status !== 'new' ? [{ status, at: o.updatedAt }] : []),
-    ],
+    ...(o.returnReason ? { returnReason: o.returnReason } : {}),
+    history: historyOf(o, status),
   };
 }
 
@@ -124,17 +152,25 @@ export async function getShopOrder(shopId: string, orderId: string): Promise<Ord
   return order;
 }
 
+/** What goes with a step: why it came back (returned, required), and how much
+ *  was paid back (refunded; the whole order when left out). */
+export interface StatusDetails {
+  reason?: string;
+  refundAmount?: number;
+}
+
 /** Moves the order on one step; the customer sees it on Fazl right away. */
 export async function setShopOrderStatus(
   shopId: string,
   orderId: string,
   status: OrderStatus,
+  details: StatusDetails = {},
 ): Promise<Order> {
   const next = TO_BACKEND[status];
   if (!next) throw new Error(t('Something went wrong'));
   const order = await api<BackendOrder>(`/orders/shop/${shopId}/manage/${orderId}`, {
     method: 'PATCH',
-    body: { status: next },
+    body: { status: next, ...details },
   });
   return toOrder(order);
 }

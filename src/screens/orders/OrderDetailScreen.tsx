@@ -38,12 +38,15 @@ import {
 } from '../../utils/orders';
 import { t } from '../../i18n';
 import { useAuth } from '../../state/AuthContext';
+import { ReturnRefundSheet } from './ReturnRefundSheet';
 
 export function OrderDetailScreen({ route, navigation }: RootScreenProps<'OrderDetail'>) {
   const { orderId } = route.params;
   const shopId = useAuth().seller?.shop?.id ?? '';
   const { data: order, setData, error, reload } = useLoad(() => getOrder(shopId, orderId), [shopId]);
   const [busy, setBusy] = useState<string | null>(null);
+  // Marking it returned asks why; refunding asks how much (ReturnRefundSheet).
+  const [sheet, setSheet] = useState<'return' | 'refund' | null>(null);
 
   if (!order) {
     return (
@@ -84,22 +87,9 @@ export function OrderDetailScreen({ route, navigation }: RootScreenProps<'OrderD
             ],
           );
         } else if (a.next === 'returned') {
-          Alert.alert(t('Mark as returned?'), t('Use this when the customer has sent the product back.'), [
-            { text: t('Not yet'), style: 'cancel' },
-            { text: t('Mark returned'), onPress: () => changeStatus('returned') },
-          ]);
+          setSheet('return');
         } else if (a.next === 'refunded') {
-          Alert.alert(
-            t('Refund the customer?'),
-            t('{amount} will be recorded as refunded for {order}.', {
-          amount: formatRs(order.subtotal - order.discount),
-          order: order.number,
-        }),
-            [
-              { text: t('Cancel'), style: 'cancel' },
-              { text: t('Refund'), onPress: () => changeStatus('refunded') },
-            ],
-          );
+          setSheet('refund');
         } else {
           changeStatus(a.next);
         }
@@ -382,6 +372,17 @@ export function OrderDetailScreen({ route, navigation }: RootScreenProps<'OrderD
         <Divider />
         <InfoRow label={t('Your earning')} value={formatRs(orderNet(order))} strong color={colors.success} />
       </Card>
+
+      <ReturnRefundSheet
+        mode={sheet}
+        order={order}
+        shopId={shopId}
+        onClose={() => setSheet(null)}
+        onDone={updated => {
+          setData(updated);
+          setSheet(null);
+        }}
+      />
     </Screen>
   );
 }
