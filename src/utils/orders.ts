@@ -110,6 +110,17 @@ export const IN_DELIVERY_STATUSES: OrderStatus[] = [
   'out_for_delivery',
 ];
 
+/**
+ * Orders that count towards earnings: delivered, and later returned/refunded
+ * (a refund comes off through orderNet). Home and Earnings both use this, so
+ * their figures agree.
+ */
+export const EARNING_STATUSES: OrderStatus[] = [
+  'delivered',
+  'returned',
+  'refunded',
+];
+
 export type OrderAction =
   | { kind: 'status'; label: string; next: OrderStatus; tone: 'primary' | 'danger' | 'outline' }
   | { kind: 'selfDelivery'; label: string }

@@ -15,6 +15,7 @@ import {
 } from '../types/models';
 import { isSameDay } from '../utils/format';
 import {
+  EARNING_STATUSES,
   IN_DELIVERY_STATUSES,
   PENDING_STATUSES,
   orderNet,
@@ -80,21 +81,20 @@ export async function getDashboard(shopId: string, userId: string): Promise<Dash
   ]);
   const today = new Date();
   const todays = orders.filter(o => isSameDay(new Date(o.createdAt), today));
-  const live = (o: Order) => o.status !== 'cancelled';
+  const earned = (o: Order) => EARNING_STATUSES.includes(o.status);
   const activeAds = campaigns.filter(c => c.status === 'active' && !c.isScheduled);
   const lowStock = db.products.filter(
     p => stockState(p, db.settings.lowStockThreshold) !== 'in_stock',
   );
   return respond({
     todayOrders: todays.length,
-    todaySales: todays.filter(live).reduce((s, o) => s + o.subtotal, 0),
+    // The same count as the Earnings page: today's delivered orders, net.
+    todayEarnings: todays.filter(earned).reduce((s, o) => s + orderNet(o), 0),
     newOrders: orders.filter(o => o.status === 'new').length,
     pendingOrders: orders.filter(o => PENDING_STATUSES.includes(o.status)).length,
     completedOrders: orders.filter(o => o.status === 'delivered').length,
     pendingDeliveries: orders.filter(o => IN_DELIVERY_STATUSES.includes(o.status)).length,
-    totalEarnings: orders
-      .filter(o => ['delivered', 'returned', 'refunded'].includes(o.status))
-      .reduce((s, o) => s + orderNet(o), 0),
+    totalEarnings: orders.filter(earned).reduce((s, o) => s + orderNet(o), 0),
     lowStock,
     activeAds,
     adTotals: campaigns.reduce(
@@ -327,7 +327,7 @@ const MONTH_NAMES = [t('Jan'), t('Feb'), t('Mar'), t('Apr'), t('May'), t('Jun'),
 export async function getEarnings(shopId: string, period: EarningsPeriod): Promise<Earnings> {
   // Orders that count as sales: delivered, and later returned/refunded.
   const counted = (await listShopOrders(shopId)).filter(o =>
-    ['delivered', 'returned', 'refunded'].includes(o.status),
+    EARNING_STATUSES.includes(o.status),
   );
   const now = new Date();
   const buckets: { label: string; from: Date; to: Date }[] = [];

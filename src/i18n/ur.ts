@@ -309,7 +309,7 @@ const ur: Record<string, string> = {
 
   // Home
   'Your products, orders and deliveries in one place': 'آپ کی پروڈکٹس، آرڈرز اور ڈیلیوریز ایک جگہ',
-  "Today's sales": 'آج کی سیلز',
+  "Today's earnings": 'آج کی آمدنی',
   'Total sales': 'کل سیلز',
   'Total orders': 'کل آرڈرز',
   'New orders': 'نئے آرڈرز',

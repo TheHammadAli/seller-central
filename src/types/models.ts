@@ -264,7 +264,8 @@ export interface Earnings {
 
 export interface Dashboard {
   todayOrders: number;
-  todaySales: number;
+  /** What today's orders earned, counted as on the Earnings page. */
+  todayEarnings: number;
   /** Waiting to be accepted. */
   newOrders: number;
   pendingOrders: number;

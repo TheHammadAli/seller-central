@@ -114,10 +114,10 @@ export function DashboardScreen() {
         imageStyle={styles.heroImage}
       >
         <AppText variant="label" color={colors.primaryTint}>
-          {t("Today's sales")}
+          {t("Today's earnings")}
         </AppText>
         <AppText variant="title" color={colors.white} style={styles.heroValue}>
-          {formatRs(data.todaySales)}
+          {formatRs(data.todayEarnings)}
         </AppText>
         <View style={styles.heroRow}>
           <AppText color={colors.white}>
