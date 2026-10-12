@@ -17,7 +17,7 @@ export const GOOGLE_CONFIG = {
 export const FEATURES = {
   stock: false,
   sale: true,
-  // Fazl riders and courier tracking: not on Fazl yet, so Local Delivery and
-  // Shipping & Tracking stay out of the menu (orders themselves are real).
-  delivery: false,
+  // Local Delivery (the shop delivering itself; Fazl riders to come) and
+  // Shipping & Tracking (couriers) in the menu.
+  delivery: true,
 };

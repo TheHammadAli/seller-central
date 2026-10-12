@@ -1,11 +1,15 @@
 // The shop's real orders on Fazl, as Seller Central shows them. An order on
 // Fazl is one product (a cart becomes one order per product) and moves
-// pending → confirmed → shipped → delivered, or cancelled before it ships; a
-// delivered one the customer sends back is returned, then refunded. The app's
-// own wording for those steps is New → Accepted → Shipped → Delivered /
-// Cancelled → Returned → Refunded. Riders and couriers aren't on Fazl yet, so
-// a real order never reaches those steps.
-import { Order, OrderStatus } from '../types/models';
+// pending → confirmed → preparing → ready; then out for delivery with the
+// shop delivering it itself (local), or shipped with a courier → in transit
+// → out for delivery (nationwide); → delivered. A pickup order is collected
+// at the shop once ready. Cancelled before it leaves the shop; a delivered
+// one the customer sends back is returned, then refunded. Orders from before
+// went confirmed → shipped → delivered. The app's own wording: New →
+// Accepted → Preparing → Ready → Shipped / Out for delivery → Delivered; a
+// courier's in transit is the order's tracking step. Fazl riders aren't on
+// Fazl yet, so a real order never reaches those steps.
+import { Order, OrderStatus, TrackingStatus } from '../types/models';
 import { api } from './http';
 import { LocalizedName, nameOf } from './session';
 import { t } from '../i18n';
@@ -13,7 +17,11 @@ import { t } from '../i18n';
 type BackendStatus =
   | 'pending'
   | 'confirmed'
+  | 'preparing'
+  | 'ready'
   | 'shipped'
+  | 'in_transit'
+  | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
   | 'returned'
@@ -30,6 +38,11 @@ interface BackendOrder {
   quantity: number;
   variant?: Record<string, unknown> | null;
   deliveryOption: 'delivery' | 'self-pickup';
+  /** Who is taking it to the customer, once it leaves the shop. */
+  deliveryMethod?: 'self' | 'rider' | 'courier' | null;
+  /** The courier and its tracking ID (orders sent by courier). */
+  courierName?: string | null;
+  trackingId?: string | null;
   /** Where to deliver it, as the buyer confirmed at checkout (older orders: none). */
   deliveryAddress?: string | null;
   paymentType: 'cashonDelivery' | 'Easypaisa';
@@ -53,16 +66,53 @@ interface BackendOrder {
 const FROM_BACKEND: Record<BackendStatus, OrderStatus> = {
   pending: 'new',
   confirmed: 'accepted',
+  preparing: 'preparing',
+  ready: 'ready',
   shipped: 'shipped',
+  // With the courier still: its tracking says how far (delivery.trackingStatus).
+  in_transit: 'shipped',
+  out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
   cancelled: 'cancelled',
   returned: 'returned',
   refunded: 'refunded',
 };
 
+/** How far a courier has it, from the order's status on Fazl. */
+const TRACKING_OF: Partial<Record<BackendStatus, TrackingStatus>> = {
+  shipped: 'shipped',
+  in_transit: 'in_transit',
+  out_for_delivery: 'out_for_delivery',
+  delivered: 'delivered',
+  returned: 'delivered',
+  refunded: 'delivered',
+};
+
+/** Who has it once it leaves the shop: a courier (nationwide, with its
+ *  tracking), or the shop itself / a rider (local). */
+function deliveryOf(o: BackendOrder): Order['delivery'] {
+  if (o.deliveryMethod === 'courier') {
+    return {
+      type: 'nationwide',
+      courier: o.courierName ?? undefined,
+      trackingId: o.trackingId ?? undefined,
+      trackingStatus: TRACKING_OF[o.status],
+    };
+  }
+  return {
+    type: 'local',
+    ...(o.deliveryMethod === 'self' || o.deliveryMethod === 'rider'
+      ? { method: o.deliveryMethod }
+      : {}),
+  };
+}
+
 const TO_BACKEND: Partial<Record<OrderStatus, BackendStatus>> = {
   accepted: 'confirmed',
+  preparing: 'preparing',
+  ready: 'ready',
   shipped: 'shipped',
+  out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
   cancelled: 'cancelled',
   returned: 'returned',
@@ -123,7 +173,7 @@ function toOrder(o: BackendOrder): Order {
     fazlCharge: 0,
     // What was paid back; it comes off the seller's earnings.
     refund: o.refundAmount ?? 0,
-    delivery: { type: 'local' },
+    delivery: deliveryOf(o),
     fulfilment: o.deliveryOption === 'self-pickup' ? 'pickup' : 'delivery',
     ...(o.returnReason ? { returnReason: o.returnReason } : {}),
     history: historyOf(o, status),
@@ -152,9 +202,14 @@ export async function getShopOrder(shopId: string, orderId: string): Promise<Ord
   return order;
 }
 
-/** What goes with a step: why it came back (returned, required), and how much
- *  was paid back (refunded; the whole order when left out). */
+/** What goes with a step: who is delivering it when it leaves the shop (the
+ *  shop itself, or a courier with its name and tracking ID), why it came back
+ *  (returned, required), and how much was paid back (refunded; the whole
+ *  order when left out). */
 export interface StatusDetails {
+  deliveryMethod?: 'self' | 'courier';
+  courierName?: string;
+  trackingId?: string;
   reason?: string;
   refundAmount?: number;
 }
@@ -171,6 +226,50 @@ export async function setShopOrderStatus(
   const order = await api<BackendOrder>(`/orders/shop/${shopId}/manage/${orderId}`, {
     method: 'PATCH',
     body: { status: next, ...details },
+  });
+  return toOrder(order);
+}
+
+/** A ready order leaves the shop with a courier: "Shipped" on Fazl, and the
+ *  customer gets the courier and the tracking ID. */
+export function shipShopOrder(
+  shopId: string,
+  orderId: string,
+  courierName: string,
+  trackingId: string,
+): Promise<Order> {
+  return setShopOrderStatus(shopId, orderId, 'shipped', {
+    deliveryMethod: 'courier',
+    courierName,
+    trackingId,
+  });
+}
+
+/** Corrects the courier or tracking ID while the parcel is on its way; the
+ *  customer is told. */
+export async function setShopOrderTracking(
+  shopId: string,
+  orderId: string,
+  courierName: string,
+  trackingId: string,
+): Promise<Order> {
+  const order = await api<BackendOrder>(`/orders/shop/${shopId}/manage/${orderId}/tracking`, {
+    method: 'PATCH',
+    body: { courierName, trackingId },
+  });
+  return toOrder(order);
+}
+
+/** Moves an order sent by courier on, as its tracking shows: in transit, out
+ *  for delivery, delivered. */
+export async function moveShopShipment(
+  shopId: string,
+  orderId: string,
+  step: Exclude<TrackingStatus, 'shipped'>,
+): Promise<Order> {
+  const order = await api<BackendOrder>(`/orders/shop/${shopId}/manage/${orderId}`, {
+    method: 'PATCH',
+    body: { status: step },
   });
   return toOrder(order);
 }

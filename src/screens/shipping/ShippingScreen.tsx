@@ -26,7 +26,8 @@ import { useAuth } from '../../state/AuthContext';
 type FilterKey = 'needs' | 'transit' | 'out' | 'delivered';
 
 const FILTERS: { key: FilterKey; label: string; test: (o: Order) => boolean }[] = [
-  { key: 'needs', label: t('Needs tracking'), test: o => o.status === 'ready' && !o.delivery.trackingId },
+  // Ready and not yet sent: tap one to book it with a courier.
+  { key: 'needs', label: t('Ready to ship'), test: o => o.status === 'ready' },
   {
     key: 'transit',
     label: t('In transit'),
@@ -43,14 +44,16 @@ const TRACK_TONE: Record<string, Tone> = {
   delivered: 'success',
 };
 
-/** Nationwide orders sent with a courier, and those still needing a tracking ID. */
+/** Delivery orders sent with a courier, and those ready to be sent. */
 export function ShippingScreen({ navigation }: RootScreenProps<'Shipping'>) {
   const [filter, setFilter] = useState<FilterKey>('needs');
   const shopId = useAuth().seller?.shop?.id;
-  const { data, error, reload, refresh, refreshing } = useLoad(async () =>
-    // Courier tracking isn't on Fazl yet: only sample orders ever ship this way.
-    (shopId ? await listOrders(shopId) : []).filter(o => !o.fulfilment && o.delivery.type === 'nationwide'),
-  );
+  const { data, error, reload, refresh, refreshing } = useLoad(async () => {
+    const orders = shopId ? await listOrders(shopId) : [];
+    return orders.filter(
+      o => o.fulfilment === 'delivery' && (o.status === 'ready' || o.delivery.type === 'nationwide'),
+    );
+  }, [shopId]);
 
   const groups = useMemo(
     () => Object.fromEntries(FILTERS.map(f => [f.key, (data ?? []).filter(f.test)])) as Record<FilterKey, Order[]>,
@@ -78,7 +81,7 @@ export function ShippingScreen({ navigation }: RootScreenProps<'Shipping'>) {
               title={t('Nothing here')}
               message={
                 filter === 'needs'
-                  ? t('Every packed nationwide order has a tracking ID.')
+                  ? t('No delivery orders are ready to ship.')
                   : t('No shipments at this stage.')
               }
             />
@@ -97,8 +100,8 @@ export function ShippingScreen({ navigation }: RootScreenProps<'Shipping'>) {
               >
                 <IconCircle icon={Truck} tone="info" size={40} />
                 <View style={styles.flex}>
-                  <AppText variant="bodyBold">
-                    {item.number} · {item.customer.city}
+                  <AppText variant="bodyBold" numberOfLines={1}>
+                    {item.number} · {item.customer.name}
                   </AppText>
                   <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
                     {d.courier

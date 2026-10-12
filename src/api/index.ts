@@ -22,7 +22,15 @@ import {
 } from '../utils/orders';
 import { stockState } from '../utils/products';
 import * as db from './mockData';
-import { getShopOrder, listShopOrders, setShopOrderStatus, StatusDetails } from './orders';
+import {
+  getShopOrder,
+  listShopOrders,
+  moveShopShipment,
+  setShopOrderStatus,
+  setShopOrderTracking,
+  shipShopOrder,
+  StatusDetails,
+} from './orders';
 export type { StatusDetails } from './orders';
 import { listCampaigns } from './campaigns';
 export { listCampaigns, getCampaign, saveCampaign, setCampaignStatus } from './campaigns';
@@ -128,15 +136,14 @@ export function updateOrderStatus(
   return setShopOrderStatus(shopId, id, status, details);
 }
 
-// Riders and couriers aren't on Fazl yet: these still work on the sample
-// orders only, and no real order offers them (see orderActions).
-
-export async function startSelfDelivery(id: string): Promise<Order> {
-  const order = findOrder(id);
-  order.delivery.method = 'self';
-  pushStatus(order, 'out_for_delivery');
-  return respond(order);
+/** A ready delivery order leaves the shop with the seller delivering it
+ *  themselves: "Out for delivery" on Fazl, and the customer is told. */
+export function startSelfDelivery(shopId: string, id: string): Promise<Order> {
+  return setShopOrderStatus(shopId, id, 'out_for_delivery', { deliveryMethod: 'self' });
 }
+
+// Fazl riders aren't on Fazl yet: these still work on the sample orders only,
+// and no real order offers them (see orderActions).
 
 export async function listNearbyRiders(): Promise<Rider[]> {
   return respond(
@@ -162,32 +169,31 @@ export async function assignRider(orderId: string, riderId: string): Promise<Ord
   return respond(order);
 }
 
-export async function setTracking(
+/**
+ * The courier and tracking ID of a ready order: it ships with them ("Shipped"
+ * on Fazl). An order already sent (`editing`) just has them corrected. Either
+ * way the customer sees them on Fazl.
+ */
+export function setTracking(
+  shopId: string,
   orderId: string,
   courier: string,
   trackingId: string,
+  editing: boolean,
 ): Promise<Order> {
-  const order = findOrder(orderId);
-  const firstTime = !order.delivery.trackingId;
-  order.delivery = {
-    ...order.delivery,
-    courier,
-    trackingId,
-    trackingStatus: order.delivery.trackingStatus ?? 'shipped',
-  };
-  if (firstTime) pushStatus(order, 'shipped');
-  return respond(order);
+  return editing
+    ? setShopOrderTracking(shopId, orderId, courier, trackingId)
+    : shipShopOrder(shopId, orderId, courier, trackingId);
 }
 
-export async function updateTracking(
+/** An order sent by courier moves on as its tracking shows. */
+export function updateTracking(
+  shopId: string,
   orderId: string,
   trackingStatus: TrackingStatus,
 ): Promise<Order> {
-  const order = findOrder(orderId);
-  order.delivery.trackingStatus = trackingStatus;
-  if (trackingStatus === 'out_for_delivery') pushStatus(order, 'out_for_delivery');
-  if (trackingStatus === 'delivered') pushStatus(order, 'delivered');
-  return respond(order);
+  if (trackingStatus === 'shipped') return getShopOrder(shopId, orderId);
+  return moveShopShipment(shopId, orderId, trackingStatus);
 }
 
 // ---------- Products & inventory ----------

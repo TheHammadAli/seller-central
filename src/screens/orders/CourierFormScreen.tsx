@@ -40,9 +40,10 @@ export function CourierFormScreen({ route, navigation }: RootScreenProps<'Courie
     if (!trackingId.trim()) next.tracking = t('Enter the tracking ID from the courier receipt');
     setErrors(next);
     if (next.courier || next.tracking) return;
+    if (!shopId) return;
     setSaving(true);
     try {
-      await setTracking(orderId, name, trackingId.trim());
+      await setTracking(shopId, orderId, name, trackingId.trim(), editing);
       navigation.goBack();
     } catch (e) {
       Alert.alert(t('Could not save tracking'), e instanceof Error ? e.message : '');
@@ -93,6 +94,7 @@ export function CourierFormScreen({ route, navigation }: RootScreenProps<'Courie
           value={otherCourier}
           onChangeText={setOtherCourier}
           placeholder={t('e.g. Swift Logistics')}
+          maxLength={60}
         />
       ) : null}
 
@@ -105,6 +107,7 @@ export function CourierFormScreen({ route, navigation }: RootScreenProps<'Courie
         }}
         placeholder="e.g. 7723918845"
         autoCapitalize="characters"
+        maxLength={60}
         error={errors.tracking}
         hint={t("It's printed on the courier's booking receipt.")}
       />

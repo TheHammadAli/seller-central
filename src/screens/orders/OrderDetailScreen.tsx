@@ -97,7 +97,7 @@ export function OrderDetailScreen({ route, navigation }: RootScreenProps<'OrderD
       case 'selfDelivery':
         Alert.alert(t('Deliver it yourself?'), t('The order will show as "Out for delivery" to the customer.'), [
           { text: t('Cancel'), style: 'cancel' },
-          { text: t("I'm delivering"), onPress: () => run('self', () => startSelfDelivery(order.id)) },
+          { text: t("I'm delivering"), onPress: () => run('self', () => startSelfDelivery(shopId, order.id)) },
         ]);
         break;
       case 'assignRider':
@@ -107,7 +107,7 @@ export function OrderDetailScreen({ route, navigation }: RootScreenProps<'OrderD
         navigation.navigate('CourierForm', { orderId: order.id });
         break;
       case 'tracking':
-        run(a.next, () => updateTracking(order.id, a.next));
+        run(a.next, () => updateTracking(shopId, order.id, a.next));
         break;
     }
   };
@@ -204,15 +204,44 @@ export function OrderDetailScreen({ route, navigation }: RootScreenProps<'OrderD
             <IconCircle icon={order.fulfilment === 'pickup' ? Store : Truck} tone="info" size={36} />
             <View style={styles.flex}>
               <AppText variant="subheading">
-                {order.fulfilment === 'pickup' ? t('Pickup from your shop') : t('Delivery to the customer')}
+                {order.fulfilment === 'pickup'
+                  ? t('Pickup from your shop')
+                  : local
+                  ? t('Delivery to the customer')
+                  : t('Nationwide shipping')}
               </AppText>
               <AppText variant="caption" color={colors.textMuted}>
                 {order.fulfilment === 'pickup'
                   ? t('The customer collects it from your shop.')
+                  : !local
+                  ? `${order.delivery.courier ?? ''} · ${order.delivery.trackingId ?? ''}`
+                  : order.delivery.method === 'self'
+                  ? t('You are delivering this order')
                   : t("Send it to the customer's address below.")}
               </AppText>
             </View>
+            {/* The courier or tracking ID can be corrected while it's on its way. */}
+            {!local && order.delivery.trackingId && ['shipped', 'out_for_delivery'].includes(order.status) ? (
+              <Pressable
+                onPress={() => navigation.navigate('CourierForm', { orderId: order.id })}
+                hitSlop={10}
+                accessibilityLabel={t('Edit tracking')}
+              >
+                <Pencil size={18} color={colors.primary} />
+              </Pressable>
+            ) : null}
           </View>
+          {!local && order.delivery.trackingStatus ? (
+            <>
+              <Divider />
+              <StepLine
+                steps={TRACKING_STEPS.map((s, i) => {
+                  const at = TRACKING_STEPS.findIndex(x => x.status === order.delivery.trackingStatus);
+                  return { label: s.label, done: i <= at, current: i === at };
+                })}
+              />
+            </>
+          ) : null}
         </Card>
       ) : (
       <Card style={styles.gap}>

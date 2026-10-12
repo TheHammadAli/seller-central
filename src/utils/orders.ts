@@ -34,11 +34,11 @@ export const STATUS_TONES: Record<OrderStatus, Tone> = {
 };
 
 /** A real order collected from the shop is "Ready for pickup" rather than
- *  "Shipped" (and "Collected" once done); a sample local order handed to a
- *  rider is "Assigned". */
+ *  "Ready" (or "Shipped", the older way) and "Collected" once done; a sample
+ *  local order handed to a rider is "Assigned". */
 export function statusLabel(order: Order, status = order.status): string {
   if (order.fulfilment === 'pickup') {
-    if (status === 'shipped') return t('Ready for pickup');
+    if (status === 'ready' || status === 'shipped') return t('Ready for pickup');
     if (status === 'delivered') return t('Collected');
   }
   if (status === 'shipped' && !order.fulfilment && order.delivery.type === 'local') {
@@ -48,9 +48,17 @@ export function statusLabel(order: Order, status = order.status): string {
 }
 
 /** The steps this order goes through, for its progress line: Fazl's own
- *  (see src/api/orders.ts). */
-export function orderSteps(_order: Order): OrderStatus[] {
-  return ['new', 'accepted', 'shipped', 'delivered'];
+ *  (see src/api/orders.ts). A pickup order is collected once ready; one sent
+ *  by courier is shipped first (its tracking shows the courier's steps); one
+ *  shipped the older way keeps its shorter steps. */
+export function orderSteps(order: Order): OrderStatus[] {
+  if (order.delivery.type === 'nationwide') {
+    return ['new', 'accepted', 'preparing', 'ready', 'shipped', 'out_for_delivery', 'delivered'];
+  }
+  if (order.status === 'shipped') return ['new', 'accepted', 'shipped', 'delivered'];
+  return order.fulfilment === 'pickup'
+    ? ['new', 'accepted', 'preparing', 'ready', 'delivered']
+    : ['new', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
 }
 
 export const RIDER_STEPS: { status: RiderStatus; label: string }[] = [
@@ -111,13 +119,16 @@ export type OrderAction =
 
 /**
  * The buttons an order shows, first one being the main next step. Only the
- * steps Fazl has (src/api/orders.ts): accept or reject a new order, ship or
- * cancel an accepted one, mark it delivered; then, if the customer sends it
- * back, mark it returned and refund them. The rider and courier steps below
- * wait for those to be on Fazl.
+ * steps Fazl has (src/api/orders.ts): accept or reject a new order, prepare
+ * it and mark it ready (or cancel it until then); a ready delivery order goes
+ * out with the seller delivering it or is sent with a courier (then follows
+ * its tracking), a ready pickup order is collected; then it's delivered, and
+ * if the customer sends it back, returned and refunded. The rider steps
+ * below wait for riders to be on Fazl.
  */
 export function orderActions(o: Order): OrderAction[] {
   if (o.fulfilment) {
+    const pickup = o.fulfilment === 'pickup';
     switch (o.status) {
       case 'new':
         return [
@@ -126,19 +137,42 @@ export function orderActions(o: Order): OrderAction[] {
         ];
       case 'accepted':
         return [
+          { kind: 'status', label: t('Start preparing'), next: 'preparing', tone: 'primary' },
+          { kind: 'status', label: t('Cancel order'), next: 'cancelled', tone: 'danger' },
+        ];
+      case 'preparing':
+        return [
           {
             kind: 'status',
-            label: o.fulfilment === 'pickup' ? t('Ready for pickup') : t('Mark as shipped'),
-            next: 'shipped',
+            label: pickup ? t('Ready for pickup') : t('Mark as ready'),
+            next: 'ready',
             tone: 'primary',
           },
           { kind: 'status', label: t('Cancel order'), next: 'cancelled', tone: 'danger' },
         ];
+      case 'ready':
+        return pickup
+          ? [{ kind: 'status', label: t('Mark as collected'), next: 'delivered', tone: 'primary' }]
+          : [
+              { kind: 'selfDelivery', label: t('Deliver it myself') },
+              { kind: 'addTracking', label: t('Send with a courier') },
+            ];
+      // Sent by courier: it moves on as its tracking shows.
       case 'shipped':
+      case 'out_for_delivery':
+        if (o.delivery.type === 'nationwide') {
+          if (o.status === 'out_for_delivery') {
+            return [{ kind: 'tracking', label: t('Mark delivered'), next: 'delivered' }];
+          }
+          return o.delivery.trackingStatus === 'in_transit'
+            ? [{ kind: 'tracking', label: t('Mark out for delivery'), next: 'out_for_delivery' }]
+            : [{ kind: 'tracking', label: t('Mark in transit'), next: 'in_transit' }];
+        }
+        // Out with the seller, or shipped the older way.
         return [
           {
             kind: 'status',
-            label: o.fulfilment === 'pickup' ? t('Mark as collected') : t('Mark delivered'),
+            label: pickup ? t('Mark as collected') : t('Mark delivered'),
             next: 'delivered',
             tone: 'primary',
           },

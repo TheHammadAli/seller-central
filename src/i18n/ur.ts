@@ -559,6 +559,11 @@ const ur: Record<string, string> = {
   'For each local order, deliver it yourself or send it with a nearby Fazl rider. You choose when the order is ready.':
     'ہر مقامی آرڈر خود ڈیلیور کریں یا قریبی فضل رائیڈر کے ذریعے بھیجیں۔ آرڈر تیار ہونے پر آپ فیصلہ کرتے ہیں۔',
   'No rider of your own? No problem.': 'اپنا رائیڈر نہیں ہے؟ کوئی مسئلہ نہیں۔',
+  'Mark an order ready, then deliver it yourself: the customer sees "Out for delivery" on Fazl, and "Delivered" once you hand it over.':
+    'آرڈر کو تیار نشان زد کریں، پھر خود ڈیلیور کریں: گاہک کو فضل پر "ڈیلیوری کے لیے روانہ" نظر آئے گا، اور حوالے کرنے کے بعد "ڈیلیور شدہ"۔',
+  'Fazl riders are coming soon': 'فضل رائیڈرز جلد آ رہے ہیں',
+  "You'll be able to send an order with a nearby Fazl rider from here.":
+    'آپ یہاں سے کسی قریبی فضل رائیڈر کے ساتھ آرڈر بھیج سکیں گے۔',
   'No local orders are waiting to be sent.': 'کوئی مقامی آرڈر بھیجے جانے کا منتظر نہیں۔',
   'Nothing on the way right now.': 'ابھی کچھ راستے میں نہیں۔',
   'Accepted, picked up, delivered': 'قبول، اٹھا لیا گیا، پہنچا دیا گیا',
@@ -580,6 +585,9 @@ const ur: Record<string, string> = {
   'Choose the courier company': 'کورئیر کمپنی منتخب کریں',
   'Enter the tracking ID from the courier receipt': 'کورئیر کی رسید سے ٹریکنگ آئی ڈی درج کریں',
   'Needs tracking': 'ٹریکنگ درکار',
+  'Ready to ship': 'بھیجنے کے لیے تیار',
+  'No delivery orders are ready to ship.': 'کوئی ڈیلیوری آرڈر بھیجنے کے لیے تیار نہیں۔',
+  'Send with a courier': 'کوریئر سے بھیجیں',
   'Every packed nationwide order has a tracking ID.': 'ہر پیک شدہ ملک گیر آرڈر کی ٹریکنگ آئی ڈی موجود ہے۔',
   'No shipments at this stage.': 'اس مرحلے میں کوئی شپمنٹ نہیں۔',
   'Delivered orders show up here.': 'ڈیلیور شدہ آرڈرز یہاں نظر آتے ہیں۔',
