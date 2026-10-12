@@ -4,7 +4,9 @@ import { PostType } from '../types/models';
 
 export type TabParamList = {
   Home: undefined;
-  Orders: { filter?: string } | undefined;
+  /** `at`: when it was asked for, so asking for the same tab again still
+   *  switches to it after the seller picked another one. */
+  Orders: { filter?: string; at?: number } | undefined;
   AddPostTab: undefined;
   Products: undefined;
   More: undefined;

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { preloadDashboard, whenDashboardPreloaded } from '../api';
 import { pickAppleIdentity } from '../api/apple';
 import { forgetGoogleAccount, pickGoogleAccount } from '../api/google';
 import { setSessionExpiredHandler } from '../api/http';
@@ -14,10 +15,24 @@ import {
 import { Seller, Shop } from '../types/models';
 import { stopPush } from '../push';
 
+/**
+ * The splash over the app: at start, after logging in and on logging out.
+ * `until` settles once what it covers is ready — Home's data loaded (start,
+ * login), or the logout done — and `id` tells one splash from the next.
+ */
+export interface Splash {
+  id: number;
+  reason: 'start' | 'login' | 'logout';
+  until: Promise<void>;
+}
+
 interface AuthState {
   seller: Seller | null;
   /** False until the saved login has been checked at startup. */
   ready: boolean;
+  splash: Splash | null;
+  /** The splash `id` has faded away. */
+  splashDone: (id: number) => void;
   signIn: (email: string, password: string) => Promise<void>;
   /** Resolves without signing in if the user backs out of Google's chooser. */
   signInWithGoogle: () => Promise<void>;
@@ -36,29 +51,70 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** A promise and the function that settles it. */
+function deferred() {
+  let resolve: () => void = () => undefined;
+  const promise = new Promise<void>(r => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [seller, setSeller] = useState<Seller | null>(null);
   const [ready, setReady] = useState(false);
+  // The start splash covers checking the saved login and loading Home.
+  const [startup] = useState(deferred);
+  const [splash, setSplash] = useState<Splash | null>(() => ({
+    id: 0,
+    reason: 'start',
+    until: startup.promise,
+  }));
 
   useEffect(() => {
-    setSessionExpiredHandler(() => setSeller(null));
+    const showSplash = (reason: Splash['reason'], until: Promise<void>) =>
+      setSplash(s => ({ id: (s?.id ?? 0) + 1, reason, until }));
+    setSessionExpiredHandler(() => {
+      setSeller(null);
+      showSplash('logout', Promise.resolve());
+    });
     restoreSession()
-      .then(setSeller)
-      .finally(() => setReady(true));
-  }, []);
+      .then(restored => {
+        // Home's data loads behind the splash, so Home opens with it.
+        if (restored?.shop) preloadDashboard(restored.shop.id, restored.id);
+        setSeller(restored);
+      })
+      .finally(() => {
+        setReady(true);
+        whenDashboardPreloaded().then(startup.resolve);
+      });
+  }, [startup]);
 
-  const value = useMemo<AuthState>(
-    () => ({
+  const value = useMemo<AuthState>(() => {
+    const showSplash = (reason: Splash['reason'], until: Promise<void>) =>
+      setSplash(s => ({ id: (s?.id ?? 0) + 1, reason, until }));
+
+    // Logged in: Home's data starts loading and the splash covers it, raised
+    // in the same update as the switch, so Home never shows before it.
+    const signedIn = (next: Seller) => {
+      if (next.shop) preloadDashboard(next.shop.id, next.id);
+      setSeller(next);
+      showSplash('login', whenDashboardPreloaded());
+    };
+
+    return {
       seller,
       ready,
+      splash,
+      splashDone: id => setSplash(s => (s?.id === id ? null : s)),
       signIn: async (email, password) => {
-        setSeller(await loginWithEmail(email, password));
+        signedIn(await loginWithEmail(email, password));
       },
       signInWithGoogle: async () => {
         const idToken = await pickGoogleAccount();
         if (!idToken) return;
         try {
-          setSeller(await loginWithGoogle(idToken));
+          signedIn(await loginWithGoogle(idToken));
         } catch (e) {
           // Let the user pick a different account next time.
           await forgetGoogleAccount();
@@ -68,15 +124,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithApple: async () => {
         const identity = await pickAppleIdentity();
         if (!identity) return;
-        setSeller(await loginWithApple(identity.identityToken, identity.fullName));
+        signedIn(await loginWithApple(identity.identityToken, identity.fullName));
       },
       signOut: async () => {
-        // While still logged in: the backend needs the session to drop this
-        // phone from the seller's notifications.
-        await stopPush();
-        await logout();
-        await forgetGoogleAccount();
-        setSeller(null);
+        // The splash first, over the logging out; the login screen when it fades.
+        const leaving = (async () => {
+          // While still logged in: the backend needs the session to drop this
+          // phone from the seller's notifications.
+          await stopPush();
+          await logout();
+          await forgetGoogleAccount();
+          setSeller(null);
+        })();
+        showSplash('logout', leaving.catch(() => undefined));
+        await leaving;
       },
       selectShop: async shopId => {
         if (seller) setSeller(await chooseShop(seller, shopId));
@@ -95,9 +156,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSeller(s =>
           s ? { ...s, shop, shops: s.shops.map(x => (x.id === shop.id ? shop : x)) } : s,
         ),
-    }),
-    [seller, ready],
-  );
+    };
+  }, [seller, ready, splash]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

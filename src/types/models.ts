@@ -48,6 +48,8 @@ export interface Variant {
   price?: number;
 }
 
+export type ListingType = 'retail' | 'classified';
+
 export interface Product {
   id: string;
   title: string;
@@ -65,6 +67,9 @@ export interface Product {
   variants: Variant[];
   /** Used when the product has no variants; otherwise the variants' sum. */
   stock: number;
+  /** Retail: customers buy it on Fazl (Buy now / Add to cart). Classified:
+   *  they contact the shop about it instead. Real products always have one. */
+  listingType?: ListingType;
   /** Shown to customers on Fazl; the seller's own "Available on Fazl" switch. */
   available: boolean;
   /** Disabled by the Fazl admin: hidden, and the seller can't change it. */

@@ -152,6 +152,46 @@ export interface ShopDraft {
   banner?: UploadFile;
 }
 
+/** What Business Profile changes: the shop's details, and a new category or
+ *  photo only when the seller picked one. */
+export interface ShopProfileDraft {
+  title: string;
+  description: string;
+  address: string;
+  area: string;
+  city: string;
+  contact: string;
+  openingHours: string;
+  categoryId?: string;
+  logo?: UploadFile;
+  banner?: UploadFile;
+}
+
+/**
+ * Saves the shop's profile on Fazl: the same shop customers see there, so
+ * the change shows in the Fazl app and website at once. Only these fields
+ * change; its place on the map stays as it is.
+ */
+export async function updateShopProfile(shopId: string, d: ShopProfileDraft): Promise<void> {
+  const form = new FormData();
+  form.append('title', d.title);
+  form.append('description', d.description);
+  form.append('address', d.address);
+  form.append('area', d.area);
+  form.append('city', d.city);
+  form.append('contact', d.contact);
+  form.append('openingHours', d.openingHours);
+  if (d.categoryId) {
+    // As the Fazl app sends it: the subcategory mirrors the category.
+    form.append('category', d.categoryId);
+    form.append('subcategory', d.categoryId);
+  }
+  // React Native's FormData takes { uri, name, type } as a file.
+  if (d.logo) form.append('image', d.logo as unknown as Blob);
+  if (d.banner) form.append('banner', d.banner as unknown as Blob);
+  await api(`/shops/${shopId}`, { method: 'PUT', form });
+}
+
 /** Creates the shop on Fazl for the logged-in account; resolves with its id. */
 export async function createShop(d: ShopDraft): Promise<string> {
   const form = new FormData();

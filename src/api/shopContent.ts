@@ -2,7 +2,7 @@
 // app's shop page uses ("List product", "Post video"), so whatever is posted
 // here shows up in that shop on Fazl straight away, and the other way round.
 import { Image } from 'react-native';
-import { Post, Product, Shop, VariationOption } from '../types/models';
+import { ListingType, Post, Product, Shop, VariationOption } from '../types/models';
 import { CategoryWithParameters } from '../utils/categoryParameters';
 import { api, ApiError } from './http';
 import { LocalizedName, nameOf } from './session';
@@ -26,6 +26,8 @@ interface BackendProduct {
   category?: { id?: string; name?: LocalizedName } | null;
   parameters?: unknown;
   isVideoPost?: boolean;
+  /** Retail (bought on Fazl) or classified (contact the seller). */
+  type?: ListingType | null;
   isDisabled?: boolean;
   hiddenByOwner?: boolean;
   taggedProductId?: string | { id?: string; title?: string } | null;
@@ -61,6 +63,8 @@ function toProduct(p: BackendProduct): Product {
     ...(p.saleStartsAt ? { saleStart: p.saleStartsAt } : {}),
     ...(p.saleEndsAt ? { saleEnd: p.saleEndsAt } : {}),
     options: toOptions(p.parameters),
+    // As the Fazl app reads it: a listing without a type is classified.
+    listingType: p.type === 'retail' ? 'retail' : 'classified',
     // Stock isn't on Fazl yet (see FEATURES).
     variants: [],
     stock: 0,
@@ -255,8 +259,11 @@ export interface ProductDraft {
   title: string;
   description: string;
   categoryId: string;
-  /** Optional, as on Fazl: none shows no price (stored as 0). */
+  /** Optional, as on Fazl: none shows no price (stored as 0). Retail needs one. */
   price: number | null;
+  /** Retail: bought on Fazl. Classified: customers contact the shop. Editing
+   *  sends the product's own type back, so it never changes by itself. */
+  listingType: ListingType;
   /** The listing's details, as the backend stores them. */
   parameters: { name: string; variants: string[] }[];
   /** Photos picked on the phone; ones already on Fazl stay as they are. */
@@ -272,8 +279,7 @@ function productForm(d: ProductDraft): FormData {
   form.append('description', d.description);
   form.append('category', d.categoryId);
   form.append('price', String(d.price ?? 0));
-  // What the Fazl app sends for every listing today (its only Type option).
-  form.append('type', 'classified');
+  form.append('type', d.listingType);
   form.append('parameters', JSON.stringify(d.parameters));
   // React Native's FormData takes { uri, name, type } as a file.
   d.newImages.forEach(f => form.append('images', f as unknown as Blob));

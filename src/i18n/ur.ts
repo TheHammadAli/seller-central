@@ -585,6 +585,16 @@ const ur: Record<string, string> = {
   'Choose the courier company': 'کورئیر کمپنی منتخب کریں',
   'Enter the tracking ID from the courier receipt': 'کورئیر کی رسید سے ٹریکنگ آئی ڈی درج کریں',
   'Needs tracking': 'ٹریکنگ درکار',
+  'Change banner': 'بینر تبدیل کریں',
+  Retail: 'ریٹیل',
+  'Enter a price: customers pay it when they buy on Fazl.': 'قیمت درج کریں: گاہک فضل پر خریدتے وقت یہی ادا کرتے ہیں۔',
+  'Customers buy it on Fazl with Buy now or Add to cart, and the order comes to you here.':
+    'گاہک اسے فضل پر "ابھی خریدیں" یا "کارٹ میں شامل کریں" سے خریدتے ہیں، اور آرڈر یہاں آپ کے پاس آتا ہے۔',
+  "Customers contact you about it (chat, offer, WhatsApp); it can't be ordered on Fazl.":
+    'گاہک اس کے بارے میں آپ سے رابطہ کرتے ہیں (چیٹ، آفر، واٹس ایپ)؛ اسے فضل پر آرڈر نہیں کیا جا سکتا۔',
+  'e.g. 2500': 'مثلاً 2500',
+  'What customers pay when they order it.': 'آرڈر کرتے وقت گاہک یہی قیمت ادا کرتے ہیں۔',
+  'Change logo': 'لوگو تبدیل کریں',
   'Ready to ship': 'بھیجنے کے لیے تیار',
   'No delivery orders are ready to ship.': 'کوئی ڈیلیوری آرڈر بھیجنے کے لیے تیار نہیں۔',
   'Send with a courier': 'کوریئر سے بھیجیں',

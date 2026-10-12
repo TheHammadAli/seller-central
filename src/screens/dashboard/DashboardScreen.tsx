@@ -14,7 +14,7 @@ import { ChevronForward } from '../../components/Chevrons';
 import React from 'react';
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native';
 import ButtonBackground from '../../assets/images/button-background.png';
-import { getDashboard } from '../../api';
+import { getDashboard, takePreloadedDashboard } from '../../api';
 import {
   AppText,
   Badge,
@@ -37,12 +37,16 @@ import { t } from '../../i18n';
 
 export function DashboardScreen() {
   const navigation = useNavigation();
+  // The Orders tab on one of its tabs ("all": every order, as See all asks).
+  const openOrders = (filter: 'all' | 'pending' | 'delivered' | 'delivery') =>
+    navigation.navigate('Tabs', { screen: 'Orders', params: { filter, at: Date.now() } });
   const { seller } = useAuth();
   const shopId = seller?.shop?.id;
   const { data, error, reload, refresh, refreshing } = useLoad(
     () =>
       shopId && seller
-        ? getDashboard(shopId, seller.id)
+        ? // The data loaded behind the splash (start, login), else afresh.
+          takePreloadedDashboard(shopId, seller.id) ?? getDashboard(shopId, seller.id)
         : Promise.reject(new Error(t('No shop on this account.'))),
     [shopId, seller?.id],
   );
@@ -120,7 +124,7 @@ export function DashboardScreen() {
             {data.todayOrders} order{data.todayOrders === 1 ? '' : 's'} today
           </AppText>
           <Pressable
-            onPress={() => navigation.navigate('Tabs', { screen: 'Orders' })}
+            onPress={() => openOrders('all')}
             style={styles.heroButton}
           >
             <AppText variant="label" color={colors.primary}>
@@ -157,36 +161,21 @@ export function DashboardScreen() {
           tone="secondary"
           label={t('Pending orders')}
           value={String(data.pendingOrders)}
-          onPress={() =>
-            navigation.navigate('Tabs', {
-              screen: 'Orders',
-              params: { filter: 'pending' },
-            })
-          }
+          onPress={() => openOrders('pending')}
         />
         <StatCard
           icon={CircleCheck}
           tone="success"
           label={t('Completed orders')}
           value={String(data.completedOrders)}
-          onPress={() =>
-            navigation.navigate('Tabs', {
-              screen: 'Orders',
-              params: { filter: 'delivered' },
-            })
-          }
+          onPress={() => openOrders('delivered')}
         />
         <StatCard
           icon={Truck}
           tone="info"
           label={t('Pending deliveries')}
           value={String(data.pendingDeliveries)}
-          onPress={() =>
-            navigation.navigate('Tabs', {
-              screen: 'Orders',
-              params: { filter: 'delivery' },
-            })
-          }
+          onPress={() => openOrders('delivery')}
         />
         <StatCard
           icon={Wallet}
@@ -272,7 +261,7 @@ export function DashboardScreen() {
       <SectionHeader
         title={t('Recent orders')}
         actionLabel={t('See all')}
-        onAction={() => navigation.navigate('Tabs', { screen: 'Orders' })}
+        onAction={() => openOrders('all')}
       />
       <View style={styles.list}>
         {data.recentOrders.map(o => (

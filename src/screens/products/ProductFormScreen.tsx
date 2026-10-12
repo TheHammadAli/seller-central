@@ -23,10 +23,12 @@ import {
   MediaPicker,
   PickedMedia,
   Screen,
+  Segmented,
   StateView,
   TextField,
   ToggleRow,
 } from '../../components';
+import { ListingType } from '../../types/models';
 import { RootScreenProps } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
 import { colors, spacing, themedStyles } from '../../theme';
@@ -80,6 +82,9 @@ export function ProductFormScreen({ route, navigation }: RootScreenProps<'Produc
   const [categoryId, setCategoryId] = useState('');
   const [parameters, setParameters] = useState<FormParameter[]>([]);
   const [price, setPrice] = useState('');
+  // A new product is sold on Fazl (Retail) unless the seller picks Classified;
+  // an existing one keeps its own type (set when it loads).
+  const [listingType, setListingType] = useState<ListingType>('retail');
   const [available, setAvailable] = useState(true);
   const [wasAvailable, setWasAvailable] = useState(true);
   const [disabledByFazl, setDisabledByFazl] = useState(false);
@@ -146,6 +151,7 @@ export function ProductFormScreen({ route, navigation }: RootScreenProps<'Produc
         detailsFor.current = p.categoryId ?? '';
         setParameters(hydrateParametersFromSaved(p.options, details));
         setPrice(p.price ? String(p.price) : '');
+        setListingType(p.listingType ?? 'classified');
         setAvailable(p.available);
         setWasAvailable(p.available);
         setDisabledByFazl(!!p.disabledByFazl);
@@ -245,6 +251,9 @@ export function ProductFormScreen({ route, navigation }: RootScreenProps<'Produc
     const priceValue = price.trim() ? Number(price) : null;
     if (priceValue !== null && (!Number.isFinite(priceValue) || priceValue < 0)) {
       next.price = t('Please enter a valid price');
+    } else if (listingType === 'retail' && !(priceValue && priceValue > 0)) {
+      // Customers pay this price when they buy it on Fazl (as in the Fazl app).
+      next.price = t('Enter a price: customers pay it when they buy on Fazl.');
     }
     if (parameters.some(p => !isParameterSatisfied(p))) {
       next.parameters = t('Please add at least one value for each parameter');
@@ -282,6 +291,7 @@ export function ProductFormScreen({ route, navigation }: RootScreenProps<'Produc
         description: description.trim(),
         categoryId,
         price: priceValue,
+        listingType,
         parameters: serializeParameters(parameters),
         newImages: media
           .filter(m => m.kind === 'image' && !isRemoteMedia(m))
@@ -419,7 +429,28 @@ export function ProductFormScreen({ route, navigation }: RootScreenProps<'Produc
           maxLength={2000}
           error={errors.description}
         />
-        {productId ? null : <Row label={t('Type')} value={t('Classified')} />}
+      </Section>
+
+      <Section>
+        <AppText variant="bodyBold" style={styles.typeLabel}>
+          {t('Type')}
+        </AppText>
+        <Segmented
+          options={[
+            { key: 'retail', label: t('Retail') },
+            { key: 'classified', label: t('Classified') },
+          ]}
+          value={listingType}
+          onChange={next => {
+            setListingType(next);
+            clearError('price');
+          }}
+        />
+        <AppText variant="caption" color={colors.textMuted} style={styles.typeHint}>
+          {listingType === 'retail'
+            ? t('Customers buy it on Fazl with Buy now or Add to cart, and the order comes to you here.')
+            : t('Customers contact you about it (chat, offer, WhatsApp); it can\'t be ordered on Fazl.')}
+        </AppText>
       </Section>
 
       <Section>
@@ -498,9 +529,13 @@ export function ProductFormScreen({ route, navigation }: RootScreenProps<'Produc
             clearError('price');
           }}
           keyboardType="number-pad"
-          placeholder={t('Optional')}
+          placeholder={listingType === 'retail' ? t('e.g. 2500') : t('Optional')}
           error={errors.price}
-          hint={t('Leave empty to show no price, as on Fazl.')}
+          hint={
+            listingType === 'retail'
+              ? t('What customers pay when they order it.')
+              : t('Leave empty to show no price, as on Fazl.')
+          }
         />
       </Section>
 
@@ -585,6 +620,8 @@ function ErrorText({ text }: { text: string }) {
 const styles = themedStyles(() => StyleSheet.create({
   section: { marginBottom: spacing.md },
   errorText: { marginTop: spacing.xs },
+  typeLabel: { marginBottom: spacing.sm },
+  typeHint: { marginTop: spacing.sm },
   params: { marginTop: spacing.md },
   row: {
     flexDirection: 'row',

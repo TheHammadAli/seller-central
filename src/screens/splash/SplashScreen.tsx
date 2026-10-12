@@ -14,6 +14,8 @@ const DOT_ACTIVE_SCALE = 1.9;
 
 /** How long the splash stays at least, so it never just blinks. */
 const MIN_SHOW_MS = 1600;
+/** The longest it waits for what it covers: a slow network can't keep it up. */
+const MAX_WAIT_MS = 8000;
 const FADE_MS = 300;
 
 function AnimatedDots() {
@@ -44,29 +46,54 @@ function AnimatedDots() {
 }
 
 /**
- * Covers the app while it starts, then fades away once it has shown for a
- * moment and the saved login has been checked — so a logged-in seller lands
- * straight on Home, never on a flash of the login screen.
+ * Covers the app while it starts, after logging in and while logging out,
+ * then fades away once it has shown for `minShowMs` and `until` has settled —
+ * the saved login checked and Home's data loaded, or the logout done. So Home
+ * opens with its data in, and nothing flashes in between. It never waits for
+ * `until` longer than MAX_WAIT_MS.
  */
-export function SplashScreen({ onDone }: { onDone: () => void }) {
+export function SplashScreen({
+  until,
+  minShowMs = MIN_SHOW_MS,
+  onDone,
+}: {
+  until?: Promise<void>;
+  minShowMs?: number;
+  onDone: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const { ready } = useAuth();
   const [shownLongEnough, setShownLongEnough] = useState(false);
+  const [covered, setCovered] = useState(!until);
   const opacity = useRef(new Animated.Value(1)).current;
   const rise = useRef(new Animated.Value(16)).current;
 
   useEffect(() => {
     Animated.timing(rise, { toValue: 0, duration: 500, useNativeDriver: true }).start();
-    const timer = setTimeout(() => setShownLongEnough(true), MIN_SHOW_MS);
+    const timer = setTimeout(() => setShownLongEnough(true), minShowMs);
     return () => clearTimeout(timer);
-  }, [rise]);
+  }, [rise, minShowMs]);
 
   useEffect(() => {
-    if (!shownLongEnough || !ready) return;
+    if (!until) return;
+    let alive = true;
+    const settle = () => {
+      if (alive) setCovered(true);
+    };
+    const cap = setTimeout(settle, MAX_WAIT_MS);
+    until.then(settle, settle);
+    return () => {
+      alive = false;
+      clearTimeout(cap);
+    };
+  }, [until]);
+
+  useEffect(() => {
+    if (!shownLongEnough || !ready || !covered) return;
     Animated.timing(opacity, { toValue: 0, duration: FADE_MS, useNativeDriver: true }).start(({ finished }) => {
       if (finished) onDone();
     });
-  }, [shownLongEnough, ready, opacity, onDone]);
+  }, [shownLongEnough, ready, covered, opacity, onDone]);
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, styles.screen, { opacity }]}>

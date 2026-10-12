@@ -30,7 +30,8 @@ type Errors = Partial<Record<Field, string>>;
 const validShopName = (name: string) =>
   name.trim().length >= 2 && /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+$/.test(name.trim());
 
-const asUpload = (a: Asset): UploadFile => ({
+/** A picked photo, as Fazl's upload takes it (Business Profile uses it too). */
+export const asUpload = (a: Asset): UploadFile => ({
   uri: a.uri as string,
   name: a.fileName ?? `photo-${Date.now()}.jpg`,
   type: a.type ?? 'image/jpeg',
@@ -383,8 +384,8 @@ export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) 
   );
 }
 
-/** A field that opens a list, drawn like a TextField. */
-function PickerField({
+/** A field that opens a list, drawn like a TextField (Business Profile uses it too). */
+export function PickerField({
   label,
   value,
   placeholder,

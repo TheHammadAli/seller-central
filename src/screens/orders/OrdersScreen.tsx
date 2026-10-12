@@ -14,13 +14,14 @@ import { useAuth } from '../../state/AuthContext';
 
 type FilterKey = 'all' | 'pending' | 'delivery' | 'delivered' | 'cancelled' | 'returns';
 
+// Every order first, then by stage.
 const FILTERS: { key: FilterKey; label: string; statuses?: OrderStatus[] }[] = [
+  { key: 'all', label: t('All') },
   { key: 'pending', label: t('Pending'), statuses: PENDING_STATUSES },
   { key: 'delivery', label: t('On the way'), statuses: IN_DELIVERY_STATUSES },
   { key: 'delivered', label: t('Delivered'), statuses: ['delivered'] },
   { key: 'cancelled', label: t('Cancelled'), statuses: ['cancelled'] },
   { key: 'returns', label: t('Returns'), statuses: ['returned', 'refunded'] },
-  { key: 'all', label: t('All') },
 ];
 
 function toFilter(param?: string): FilterKey | undefined {
@@ -30,7 +31,7 @@ function toFilter(param?: string): FilterKey | undefined {
 
 export function OrdersScreen() {
   const route = useRoute<RouteProp<TabParamList, 'Orders'>>();
-  const [filter, setFilter] = useState<FilterKey>(toFilter(route.params?.filter) ?? 'pending');
+  const [filter, setFilter] = useState<FilterKey>(toFilter(route.params?.filter) ?? 'all');
   const [query, setQuery] = useState('');
   const shopId = useAuth().seller?.shop?.id;
   const { data, error, reload, refresh, refreshing } = useLoad(
@@ -38,11 +39,11 @@ export function OrdersScreen() {
     [shopId],
   );
 
-  // Opened again from the dashboard with a different filter.
+  // Opened again from the dashboard: its tab, even the same one as last time.
   useEffect(() => {
     const next = toFilter(route.params?.filter);
     if (next) setFilter(next);
-  }, [route.params?.filter]);
+  }, [route.params?.filter, route.params?.at]);
 
   const counts = useMemo(() => {
     const c: Partial<Record<FilterKey, number>> = {};

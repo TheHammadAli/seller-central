@@ -11,7 +11,6 @@ import {
   Product,
   Rider,
   SellerSettings,
-  Shop,
   TrackingStatus,
 } from '../types/models';
 import { isSameDay } from '../utils/format';
@@ -112,6 +111,35 @@ export async function getDashboard(shopId: string, userId: string): Promise<Dash
     recentOrders: orders.slice(0, 4),
     unreadNotifications,
   });
+}
+
+// Home's data, loaded behind the splash (at start and after login) so Home
+// opens with it. Home takes this request over instead of sending its own.
+const PRELOAD_FRESH_MS = 30_000;
+let preloadedDashboard: { key: string; at: number; promise: Promise<Dashboard> } | null = null;
+
+/** Starts loading Home's data for this shop, ahead of Home opening. */
+export function preloadDashboard(shopId: string, userId: string): Promise<Dashboard> {
+  const promise = getDashboard(shopId, userId);
+  preloadedDashboard = { key: `${shopId}:${userId}`, at: Date.now(), promise };
+  // A failed preload isn't handed on: Home then loads for itself.
+  promise.catch(() => {
+    if (preloadedDashboard?.promise === promise) preloadedDashboard = null;
+  });
+  return promise;
+}
+
+/** Home's data loaded ahead, once (a later visit fetches afresh); null if none. */
+export function takePreloadedDashboard(shopId: string, userId: string): Promise<Dashboard> | null {
+  const hit = preloadedDashboard;
+  if (!hit || hit.key !== `${shopId}:${userId}` || Date.now() - hit.at > PRELOAD_FRESH_MS) return null;
+  preloadedDashboard = null;
+  return hit.promise;
+}
+
+/** Settles once Home's preloaded data is in (or failed); at once if none is loading. */
+export function whenDashboardPreloaded(): Promise<void> {
+  return preloadedDashboard ? preloadedDashboard.promise.then(() => undefined, () => undefined) : Promise.resolve();
 }
 
 // ---------- Orders ----------
@@ -350,11 +378,6 @@ export async function getEarnings(shopId: string, period: EarningsPeriod): Promi
 }
 
 // ---------- Profile, notifications, settings ----------
-
-/** Sample only: the profile isn't saved to the backend until the Business Profile chunk. */
-export async function saveShop(shop: Shop): Promise<Shop> {
-  return respond(shop);
-}
 
 /** The seller's notifications on Fazl (./notifications.ts). */
 export function listNotifications(userId: string, shopId: string): Promise<AppNotification[]> {
