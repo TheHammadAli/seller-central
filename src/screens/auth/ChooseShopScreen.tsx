@@ -76,10 +76,11 @@ function ShopPicker({ switching }: { switching: boolean }) {
     }
   };
 
+  // Suspended shops aren't in the list (see api/session.ts).
   const shops = seller?.shops ?? [];
   const firstName = (seller?.name ?? '').split(' ')[0];
-  // Fazl allows an account 3 shops that aren't disabled.
-  const canCreate = shops.filter(s => !s.disabled).length < MAX_SHOPS;
+  // Fazl allows an account 3 shops that aren't suspended.
+  const canCreate = shops.length < MAX_SHOPS;
 
   return (
     <Screen
@@ -206,10 +207,9 @@ function ShopCard({
             </AppText>
           </View>
         ) : null}
-        {shop.disabled || current ? (
+        {current ? (
           <View style={styles.badges}>
-            {current ? <Badge label={t('Current')} tone="primary" /> : null}
-            {shop.disabled ? <Badge label={t('Disabled by Fazl')} tone="danger" /> : null}
+            <Badge label={t('Current')} tone="primary" />
           </View>
         ) : null}
       </View>

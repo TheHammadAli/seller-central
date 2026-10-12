@@ -10,7 +10,8 @@
 // courier's in transit is the order's tracking step. Fazl riders aren't on
 // Fazl yet, so a real order never reaches those steps.
 import { Order, OrderStatus, TrackingStatus } from '../types/models';
-import { api } from './http';
+import { orderNet } from '../utils/orders';
+import { api, ApiError } from './http';
 import { LocalizedName, nameOf } from './session';
 import { t } from '../i18n';
 
@@ -194,6 +195,84 @@ export async function listShopOrders(shopId: string): Promise<Order[]> {
     if (!batch || batch.length < PAGE) break;
   }
   return all.map(toOrder);
+}
+
+/** How many orders are at a status, and what the seller earned from them. */
+export interface StatusTotals {
+  count: number;
+  /** As orderNet counts it: what the orders came to, less refunds. */
+  net: number;
+}
+
+export type TotalsByStatus = Partial<Record<OrderStatus, StatusTotals>>;
+
+/** What Home shows of the shop's orders. */
+export interface OrderSummary {
+  all: TotalsByStatus;
+  /** Those placed today. */
+  today: TotalsByStatus;
+  /** The newest four. */
+  recent: Order[];
+}
+
+interface BackendTotals {
+  count: number;
+  amount: number;
+  refunded: number;
+}
+
+interface BackendSummary {
+  byStatus: Partial<Record<BackendStatus, BackendTotals>>;
+  todayByStatus: Partial<Record<BackendStatus, BackendTotals>>;
+  recent: BackendOrder[];
+}
+
+/** Fazl's totals in the app's statuses (in transit counts as shipped). */
+function fromBackendTotals(totals: BackendSummary['byStatus'] | undefined): TotalsByStatus {
+  const out: TotalsByStatus = {};
+  for (const [status, row] of Object.entries(totals ?? {}) as [BackendStatus, BackendTotals][]) {
+    const key = FROM_BACKEND[status] ?? 'new';
+    const into = out[key] ?? (out[key] = { count: 0, net: 0 });
+    into.count += row.count;
+    into.net += row.amount - row.refunded;
+  }
+  return out;
+}
+
+function totalsOf(orders: Order[]): TotalsByStatus {
+  const out: TotalsByStatus = {};
+  for (const o of orders) {
+    const into = out[o.status] ?? (out[o.status] = { count: 0, net: 0 });
+    into.count += 1;
+    into.net += orderNet(o);
+  }
+  return out;
+}
+
+/**
+ * Home's view of the shop's orders, `from`–`to` being today: one small
+ * request, rather than every order. A backend from before the summary gets
+ * the full list instead, added up here the same way.
+ */
+export async function getOrderSummary(shopId: string, from: Date, to: Date): Promise<OrderSummary> {
+  try {
+    const day = `from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`;
+    const s = await api<BackendSummary>(`/orders/shop/${shopId}/manage/summary?${day}`);
+    return {
+      all: fromBackendTotals(s?.byStatus),
+      today: fromBackendTotals(s?.todayByStatus),
+      recent: (s?.recent ?? []).map(toOrder),
+    };
+  } catch (e) {
+    // Not on this backend yet. (An unknown shop is a 404 too; the list says so.)
+    if (!(e instanceof ApiError && e.status === 404)) throw e;
+  }
+  const orders = await listShopOrders(shopId);
+  const todays = orders.filter(o => {
+    const at = new Date(o.createdAt);
+    return at >= from && at < to;
+  });
+  return { all: totalsOf(orders), today: totalsOf(todays), recent: orders.slice(0, 4) };
 }
 
 export async function getShopOrder(shopId: string, orderId: string): Promise<Order> {

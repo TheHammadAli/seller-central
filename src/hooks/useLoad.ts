@@ -9,14 +9,21 @@ import { t } from '../i18n';
  * after `deps` change — the old data belongs to something else then (another
  * shop's products) and must not stay on screen; a plain refresh updates in
  * place. Only the latest request's answer is ever shown, so a slow reply for
- * the previous shop can't land on top of the current one.
+ * the previous shop can't land on top of the current one. `initial` hands in
+ * data already loaded ahead, shown at once instead of the spinner.
  */
-export function useLoad<T>(load: () => Promise<T>, deps: unknown[] = []) {
-  const [data, setData] = useState<T>();
+export function useLoad<T>(
+  load: () => Promise<T>,
+  deps: unknown[] = [],
+  initial?: () => T | undefined,
+) {
+  const [data, setData] = useState<T | undefined>(initial);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const loadRef = useRef(load);
   loadRef.current = load;
+  const initialRef = useRef(initial);
+  initialRef.current = initial;
   const latest = useRef(0);
 
   const reload = useCallback(async (pulled = false) => {
@@ -48,7 +55,7 @@ export function useLoad<T>(load: () => Promise<T>, deps: unknown[] = []) {
       firstRun.current = false;
       return;
     }
-    setData(undefined);
+    setData(initialRef.current?.());
     setError(null);
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps

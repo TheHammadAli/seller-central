@@ -1,5 +1,6 @@
 // Orders, notifications and advertising use the shop's backend records.
 // The older helpers below still use sample data until their backend chunk.
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AppNotification,
   Dashboard,
@@ -23,6 +24,7 @@ import {
 import { stockState } from '../utils/products';
 import * as db from './mockData';
 import {
+  getOrderSummary,
   getShopOrder,
   listShopOrders,
   moveShopShipment,
@@ -30,6 +32,8 @@ import {
   setShopOrderTracking,
   shipShopOrder,
   StatusDetails,
+  StatusTotals,
+  TotalsByStatus,
 } from './orders';
 export type { StatusDetails } from './orders';
 import { listCampaigns } from './campaigns';
@@ -73,28 +77,39 @@ function pushStatus(order: Order, status: OrderStatus) {
 
 // ---------- Dashboard ----------
 
+/** Adds up `field` over the orders at `statuses` (every status when left out). */
+function sumOf(
+  totals: TotalsByStatus,
+  field: keyof StatusTotals,
+  statuses = Object.keys(totals) as OrderStatus[],
+): number {
+  return statuses.reduce((s, status) => s + (totals[status]?.[field] ?? 0), 0);
+}
+
 export async function getDashboard(shopId: string, userId: string): Promise<Dashboard> {
+  // Today as the seller's phone counts it.
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const [orders, unreadNotifications, campaigns] = await Promise.all([
-    listShopOrders(shopId),
+    getOrderSummary(shopId, from, to),
     sellerUnreadCount(userId).catch(() => 0),
     listCampaigns(shopId),
   ]);
-  const today = new Date();
-  const todays = orders.filter(o => isSameDay(new Date(o.createdAt), today));
-  const earned = (o: Order) => EARNING_STATUSES.includes(o.status);
   const activeAds = campaigns.filter(c => c.status === 'active' && !c.isScheduled);
   const lowStock = db.products.filter(
     p => stockState(p, db.settings.lowStockThreshold) !== 'in_stock',
   );
-  return respond({
-    todayOrders: todays.length,
+  // Straight back: respond()'s pretend network delay is for the sample data only.
+  const dashboard: Dashboard = {
+    todayOrders: sumOf(orders.today, 'count'),
     // The same count as the Earnings page: today's delivered orders, net.
-    todayEarnings: todays.filter(earned).reduce((s, o) => s + orderNet(o), 0),
-    newOrders: orders.filter(o => o.status === 'new').length,
-    pendingOrders: orders.filter(o => PENDING_STATUSES.includes(o.status)).length,
-    completedOrders: orders.filter(o => o.status === 'delivered').length,
-    pendingDeliveries: orders.filter(o => IN_DELIVERY_STATUSES.includes(o.status)).length,
-    totalEarnings: orders.filter(earned).reduce((s, o) => s + orderNet(o), 0),
+    todayEarnings: sumOf(orders.today, 'net', EARNING_STATUSES),
+    newOrders: sumOf(orders.all, 'count', ['new']),
+    pendingOrders: sumOf(orders.all, 'count', PENDING_STATUSES),
+    completedOrders: sumOf(orders.all, 'count', ['delivered']),
+    pendingDeliveries: sumOf(orders.all, 'count', IN_DELIVERY_STATUSES),
+    totalEarnings: sumOf(orders.all, 'net', EARNING_STATUSES),
     lowStock,
     activeAds,
     adTotals: campaigns.reduce(
@@ -107,26 +122,101 @@ export async function getDashboard(shopId: string, userId: string): Promise<Dash
       }),
       { impressions: 0, clicks: 0, orders: 0, spent: 0, sales: 0 },
     ),
-    // Already newest first.
-    recentOrders: orders.slice(0, 4),
+    recentOrders: orders.recent,
     unreadNotifications,
-  });
+  };
+  saveDashboard(shopId, userId, dashboard);
+  return dashboard;
 }
 
-// Home's data, loaded behind the splash at start so Home
-// opens with it. Home takes this request over instead of sending its own.
-const PRELOAD_FRESH_MS = 30_000;
-let preloadedDashboard: { key: string; at: number; promise: Promise<Dashboard> } | null = null;
+// Home's data as last loaded, kept on the phone per account and shop, so Home
+// can open with it at once next time — on a slow network too — while the
+// fresh data loads. The version goes up whenever Dashboard's shape changes.
+const savedDashboardKey = (shopId: string, userId: string) =>
+  `sellerCentral.home.v1.${userId}.${shopId}`;
 
-/** Starts loading Home's data for this shop, ahead of Home opening. */
+function saveDashboard(shopId: string, userId: string, data: Dashboard) {
+  AsyncStorage.setItem(
+    savedDashboardKey(shopId, userId),
+    JSON.stringify({ at: new Date().toISOString(), data }),
+  ).catch(() => undefined);
+}
+
+async function readSavedDashboard(shopId: string, userId: string): Promise<Dashboard | undefined> {
+  try {
+    const raw = await AsyncStorage.getItem(savedDashboardKey(shopId, userId));
+    if (!raw) return undefined;
+    const saved = JSON.parse(raw) as { at: string; data: Dashboard };
+    // Saved on another day: its "today" isn't today, so that waits for the fresh data.
+    const sameDay = isSameDay(new Date(saved.at), new Date());
+    return {
+      ...saved.data,
+      ...(sameDay ? {} : { todayOrders: 0, todayEarnings: 0 }),
+      savedAt: saved.at,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+// Home's data, loaded ahead — behind the splash at start, while logging in or
+// opening a shop — so Home opens with it. Home takes this request over
+// instead of sending its own.
+const PRELOAD_FRESH_MS = 30_000;
+let preloadedDashboard: {
+  key: string;
+  at: number;
+  promise: Promise<Dashboard>;
+  /** The data, once it's in. */
+  value?: Dashboard;
+  /** Last time's, from the phone, until then. */
+  saved?: Dashboard;
+} | null = null;
+
+/**
+ * Starts loading Home's data for this shop, ahead of Home opening. One already
+ * on its way for the same shop (started early, while logging in) is used
+ * rather than sent again.
+ */
 export function preloadDashboard(shopId: string, userId: string): Promise<Dashboard> {
+  const key = `${shopId}:${userId}`;
+  const current = preloadedDashboard;
+  if (current?.key === key && Date.now() - current.at <= PRELOAD_FRESH_MS) return current.promise;
   const promise = getDashboard(shopId, userId);
-  preloadedDashboard = { key: `${shopId}:${userId}`, at: Date.now(), promise };
-  // A failed preload isn't handed on: Home then loads for itself.
-  promise.catch(() => {
-    if (preloadedDashboard?.promise === promise) preloadedDashboard = null;
-  });
+  const entry: NonNullable<typeof preloadedDashboard> = { key, at: Date.now(), promise };
+  preloadedDashboard = entry;
+  promise.then(
+    value => {
+      entry.value = value;
+    },
+    // A failed preload isn't handed on: Home then loads for itself.
+    () => {
+      if (preloadedDashboard === entry) preloadedDashboard = null;
+    },
+  );
   return promise;
+}
+
+/**
+ * Puts last time's Home data from the phone with the load in flight for this
+ * shop, so Home can open with it straight away. True if there was any.
+ */
+export async function preloadSavedDashboard(shopId: string, userId: string): Promise<boolean> {
+  const saved = await readSavedDashboard(shopId, userId);
+  const hit = preloadedDashboard;
+  if (!saved || hit?.key !== `${shopId}:${userId}`) return false;
+  hit.saved = saved;
+  return true;
+}
+
+/**
+ * What Home can show at once: the preloaded data if it's in, else last time's
+ * from the phone (marked with `savedAt`), else nothing.
+ */
+export function peekPreloadedDashboard(shopId: string, userId: string): Dashboard | undefined {
+  const hit = preloadedDashboard;
+  if (!hit || hit.key !== `${shopId}:${userId}` || Date.now() - hit.at > PRELOAD_FRESH_MS) return undefined;
+  return hit.value ?? hit.saved;
 }
 
 /** Home's data loaded ahead, once (a later visit fetches afresh); null if none. */

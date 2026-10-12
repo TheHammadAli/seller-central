@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { preloadDashboard, whenDashboardPreloaded } from '../api';
+import { preloadDashboard, preloadSavedDashboard, whenDashboardPreloaded } from '../api';
 import { pickAppleIdentity } from '../api/apple';
 import { forgetGoogleAccount, pickGoogleAccount } from '../api/google';
 import { setSessionExpiredHandler } from '../api/http';
@@ -9,6 +9,7 @@ import {
   loginWithEmail,
   loginWithGoogle,
   logout,
+  OnLastShop,
   refreshShops,
   restoreSession,
 } from '../api/session';
@@ -51,6 +52,33 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** The longest logging in (or opening a shop) waits for Home's data. */
+const HOME_WAIT_MS = 3000;
+
+/**
+ * Loads Home's data for this shop — while the login button, the shop card or
+ * the splash still shows it's busy — so Home then opens with data, not a
+ * spinner. With last time's data on the phone there's no wait at all: Home
+ * opens with that and the fresh data replaces it when in. Without it, a slow
+ * network holds things up HOME_WAIT_MS at most; Home then takes the same
+ * request over.
+ */
+async function loadHome(shopId: string | undefined, userId: string) {
+  if (!shopId) return;
+  preloadDashboard(shopId, userId);
+  if (await preloadSavedDashboard(shopId, userId)) return;
+  await Promise.race([
+    whenDashboardPreloaded(),
+    new Promise<void>(resolve => setTimeout(resolve, HOME_WAIT_MS)),
+  ]);
+}
+
+/** Home's data for the shop shown last time, started as soon as the account
+ *  is known — alongside the shop list rather than after it. */
+const startHome: OnLastShop = (shopId, userId) => {
+  preloadDashboard(shopId, userId);
+};
+
 /** A promise and the function that settles it. */
 function deferred() {
   let resolve: () => void = () => undefined;
@@ -78,15 +106,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSeller(null);
       showSplash('logout', Promise.resolve());
     });
-    restoreSession()
-      .then(restored => {
-        // Home's data loads behind the splash, so Home opens with it.
-        if (restored?.shop) preloadDashboard(restored.shop.id, restored.id);
+    restoreSession(startHome)
+      .then(async restored => {
+        // Home's data (or last time's) behind the splash, so Home opens with it.
+        if (restored) await loadHome(restored.shop?.id, restored.id);
         setSeller(restored);
       })
       .finally(() => {
         setReady(true);
-        whenDashboardPreloaded().then(startup.resolve);
+        startup.resolve();
       });
   }, [startup]);
 
@@ -94,8 +122,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const showSplash = (reason: Splash['reason'], until: Promise<void>) =>
       setSplash(s => ({ id: (s?.id ?? 0) + 1, reason, until }));
 
-    // Logged in: straight to Home, which loads its own data — no splash.
-    const signedIn = (next: Seller) => setSeller(next);
+    // Logged in: Home's data first (the login button still spinning, no
+    // splash), then Home, which opens with it.
+    const signedIn = async (next: Seller) => {
+      await loadHome(next.shop?.id, next.id);
+      setSeller(next);
+    };
 
     return {
       seller,
@@ -103,23 +135,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       splash,
       splashDone: id => setSplash(s => (s?.id === id ? null : s)),
       signIn: async (email, password) => {
-        signedIn(await loginWithEmail(email, password));
+        await signedIn(await loginWithEmail(email, password, startHome));
       },
       signInWithGoogle: async () => {
         const idToken = await pickGoogleAccount();
         if (!idToken) return;
+        let next: Seller;
         try {
-          signedIn(await loginWithGoogle(idToken));
+          next = await loginWithGoogle(idToken, startHome);
         } catch (e) {
           // Let the user pick a different account next time.
           await forgetGoogleAccount();
           throw e;
         }
+        await signedIn(next);
       },
       signInWithApple: async () => {
         const identity = await pickAppleIdentity();
         if (!identity) return;
-        signedIn(await loginWithApple(identity.identityToken, identity.fullName));
+        await signedIn(await loginWithApple(identity.identityToken, identity.fullName, startHome));
       },
       signOut: async () => {
         // The splash first, over the logging out; the login screen when it fades.
@@ -135,7 +169,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await leaving;
       },
       selectShop: async shopId => {
-        if (seller) setSeller(await chooseShop(seller, shopId));
+        if (!seller) return;
+        const next = await chooseShop(seller, shopId);
+        // Home's data while the shop's card shows it's opening.
+        await loadHome(shopId, seller.id);
+        setSeller(next);
       },
       reloadShops: async () => {
         if (seller) setSeller(await refreshShops(seller));
@@ -144,8 +182,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!seller) return false;
         const withNewShop = await refreshShops(seller);
         const listed = withNewShop.shops.some(s => s.id === shopId);
-        setSeller(listed ? await chooseShop(withNewShop, shopId) : withNewShop);
-        return listed;
+        if (!listed) {
+          setSeller(withNewShop);
+          return false;
+        }
+        const next = await chooseShop(withNewShop, shopId);
+        await loadHome(shopId, seller.id);
+        setSeller(next);
+        return true;
       },
       setShop: shop =>
         setSeller(s =>

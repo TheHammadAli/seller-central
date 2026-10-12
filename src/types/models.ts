@@ -276,5 +276,8 @@ export interface Dashboard {
   activeAds: Campaign[];
   adTotals: { impressions: number; clicks: number; orders: number; spent: number; sales: number };
   recentOrders: Order[];
+  /** Set on the copy saved on the phone (when it was loaded), shown while
+   *  the fresh data loads; absent on fresh data. */
+  savedAt?: string;
   unreadNotifications: number;
 }

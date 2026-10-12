@@ -14,7 +14,7 @@ import { ChevronForward } from '../../components/Chevrons';
 import React from 'react';
 import { ImageBackground, Pressable, StyleSheet, View } from 'react-native';
 import ButtonBackground from '../../assets/images/button-background.png';
-import { getDashboard, takePreloadedDashboard } from '../../api';
+import { getDashboard, peekPreloadedDashboard, takePreloadedDashboard } from '../../api';
 import {
   AppText,
   Badge,
@@ -45,10 +45,12 @@ export function DashboardScreen() {
   const { data, error, reload, refresh, refreshing } = useLoad(
     () =>
       shopId && seller
-        ? // The data loaded behind the start splash, else afresh.
+        ? // The data loaded ahead (start splash, logging in, opening a shop), else afresh.
           takePreloadedDashboard(shopId, seller.id) ?? getDashboard(shopId, seller.id)
         : Promise.reject(new Error(t('No shop on this account.'))),
     [shopId, seller?.id],
+    // Already in: shown at once, with no spinner first.
+    () => (shopId && seller ? peekPreloadedDashboard(shopId, seller.id) : undefined),
   );
 
   const manyShops = (seller?.shops.length ?? 0) > 1;
@@ -104,7 +106,8 @@ export function DashboardScreen() {
       header={header}
       bottomInset={false}
       onRefresh={refresh}
-      refreshing={refreshing}
+      // Showing last time's data from the phone: the spinner says fresh is on its way.
+      refreshing={refreshing || (!!data.savedAt && !error)}
     >
       {/* Today — the same teal doodle background as the Log in button. */}
       <ImageBackground

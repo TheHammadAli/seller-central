@@ -10,6 +10,14 @@ import { api, ApiError, currentTokens, loadTokens, saveTokens } from './http';
 const SELLER_KEY = 'sellerCentral.seller';
 /** Per account, so a shared phone remembers each seller's own choice. */
 const activeShopKey = (userId: string) => `sellerCentral.activeShop.${userId}`;
+/** The shop Home showed last, chosen or the only one (per account). */
+const lastShopKey = (userId: string) => `sellerCentral.lastShop.${userId}`;
+
+/**
+ * Told the shop Home showed last as soon as the account is known — before the
+ * shop list is in — so Home's data can start loading alongside it.
+ */
+export type OnLastShop = (shopId: string, userId: string) => void;
 
 interface BackendUser {
   id?: string;
@@ -74,12 +82,24 @@ type Profile = Pick<Seller, 'id' | 'name' | 'email' | 'phone'>;
 
 const profileFrom = (s: Seller): Profile => ({ id: s.id, name: s.name, email: s.email, phone: s.phone });
 
-async function sellerFor(user: Profile): Promise<Seller> {
-  const shops = ((await api<BackendShop[]>('/shops/userShops')) ?? []).map(s => toShop(s, user.name));
-  const chosenId = await AsyncStorage.getItem(activeShopKey(user.id));
+/** A shop Fazl's admin has suspended can't be chosen, so it isn't listed. */
+const selectable = (shops: Shop[]) => shops.filter(s => !s.disabled);
+
+async function sellerFor(user: Profile, onLastShop?: OnLastShop): Promise<Seller> {
+  const shopsRequest = api<BackendShop[]>('/shops/userShops');
+  // Awaited below; this only keeps a quick failure from being reported as unhandled meanwhile.
+  shopsRequest.catch(() => undefined);
+  const remembered = await AsyncStorage.getMany([activeShopKey(user.id), lastShopKey(user.id)]);
+  const chosenId = remembered[activeShopKey(user.id)];
+  const lastId = remembered[lastShopKey(user.id)];
+  if (lastId) onLastShop?.(lastId, user.id);
+  const shops = selectable(((await shopsRequest) ?? []).map(s => toShop(s, user.name)));
   const shop = shops.find(s => s.id === chosenId) ?? (shops.length === 1 ? shops[0] : null);
   const seller: Seller = { ...user, shops, shop };
-  await AsyncStorage.setItem(SELLER_KEY, JSON.stringify(seller));
+  await AsyncStorage.setMany({
+    [SELLER_KEY]: JSON.stringify(seller),
+    ...(shop ? { [lastShopKey(user.id)]: shop.id } : {}),
+  });
   return seller;
 }
 
@@ -87,9 +107,12 @@ async function sellerFor(user: Profile): Promise<Seller> {
 export async function chooseShop(seller: Seller, shopId: string): Promise<Seller> {
   const shop = seller.shops.find(s => s.id === shopId);
   if (!shop) throw new Error(t('That shop is no longer on your account.'));
-  await AsyncStorage.setItem(activeShopKey(seller.id), shopId);
   const next = { ...seller, shop };
-  await AsyncStorage.setItem(SELLER_KEY, JSON.stringify(next));
+  await AsyncStorage.setMany({
+    [activeShopKey(seller.id)]: shopId,
+    [lastShopKey(seller.id)]: shopId,
+    [SELLER_KEY]: JSON.stringify(next),
+  });
   return next;
 }
 
@@ -105,14 +128,18 @@ const profileOf = (u: BackendUser): Profile => ({
   phone: u.phone || undefined,
 });
 
-export async function loginWithEmail(email: string, password: string): Promise<Seller> {
+export async function loginWithEmail(
+  email: string,
+  password: string,
+  onLastShop?: OnLastShop,
+): Promise<Seller> {
   const data = await api<{ accessToken: string; refreshToken: string; user: BackendUser }>('/auth/login', {
     method: 'POST',
     body: { email, password, loginContext: 'app' },
     auth: false,
   });
   await saveTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-  return sellerFor(profileOf(data.user));
+  return sellerFor(profileOf(data.user), onLastShop);
 }
 
 /**
@@ -120,14 +147,14 @@ export async function loginWithEmail(email: string, password: string): Promise<S
  * the backend refuse an email that isn't registered (404) instead of
  * creating a new account for it.
  */
-export async function loginWithGoogle(idToken: string): Promise<Seller> {
+export async function loginWithGoogle(idToken: string, onLastShop?: OnLastShop): Promise<Seller> {
   const data = await api<{ accessToken: string; user: BackendUser }>('/auth/google/verify/token', {
     method: 'POST',
     body: { idToken, allowSignUp: false },
     auth: false,
   });
   await saveTokens({ accessToken: data.accessToken, refreshToken: data.user.refreshToken });
-  return sellerFor(profileOf(data.user));
+  return sellerFor(profileOf(data.user), onLastShop);
 }
 
 /**
@@ -138,6 +165,7 @@ export async function loginWithGoogle(idToken: string): Promise<Seller> {
 export async function loginWithApple(
   identityToken: string,
   fullName: { givenName: string | null; familyName: string | null },
+  onLastShop?: OnLastShop,
 ): Promise<Seller> {
   const data = await api<{ accessToken: string; user: BackendUser }>('/auth/apple/verify/token', {
     method: 'POST',
@@ -145,7 +173,7 @@ export async function loginWithApple(
     auth: false,
   });
   await saveTokens({ accessToken: data.accessToken, refreshToken: data.user.refreshToken });
-  return sellerFor(profileOf(data.user));
+  return sellerFor(profileOf(data.user), onLastShop);
 }
 
 /**
@@ -153,7 +181,7 @@ export async function loginWithApple(
  * Offline, the saved copy is used; a login the backend no longer accepts is
  * cleared.
  */
-export async function restoreSession(): Promise<Seller | null> {
+export async function restoreSession(onLastShop?: OnLastShop): Promise<Seller | null> {
   if (!(await loadTokens())) return null;
   let saved: Seller | null = null;
   try {
@@ -167,11 +195,14 @@ export async function restoreSession(): Promise<Seller | null> {
     return null;
   }
   try {
-    return await sellerFor(profileFrom(saved));
+    return await sellerFor(profileFrom(saved), onLastShop);
   } catch (e) {
     if (e instanceof ApiError && e.status === 0) {
-      // Offline: the saved copy (one saved by an older version has no list).
-      return { ...saved, shops: saved.shops ?? (saved.shop ? [saved.shop] : []) };
+      // Offline: the saved copy (one saved by an older version has no list,
+      // and may still hold a suspended shop).
+      const shops = selectable(saved.shops ?? (saved.shop ? [saved.shop] : []));
+      const shop = shops.find(s => s.id === saved.shop?.id) ?? (shops.length === 1 ? shops[0] : null);
+      return { ...saved, shops, shop };
     }
     await clearSession();
     return null;
