@@ -45,7 +45,7 @@ export function DashboardScreen() {
   const { data, error, reload, refresh, refreshing } = useLoad(
     () =>
       shopId && seller
-        ? // The data loaded behind the splash (start, login), else afresh.
+        ? // The data loaded behind the start splash, else afresh.
           takePreloadedDashboard(shopId, seller.id) ?? getDashboard(shopId, seller.id)
         : Promise.reject(new Error(t('No shop on this account.'))),
     [shopId, seller?.id],

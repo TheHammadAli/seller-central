@@ -46,19 +46,21 @@ function AnimatedDots() {
 }
 
 /**
- * Covers the app while it starts, after logging in and while logging out,
- * then fades away once it has shown for `minShowMs` and `until` has settled —
- * the saved login checked and Home's data loaded, or the logout done. So Home
- * opens with its data in, and nothing flashes in between. It never waits for
- * `until` longer than MAX_WAIT_MS.
+ * Covers the app while it starts and while logging out, then fades away once
+ * it has shown for `minShowMs` and `until` has settled — the saved login
+ * checked and Home's data loaded, or the logout done. So Home opens with its
+ * data in, and nothing flashes in between. It never waits for `until` longer
+ * than MAX_WAIT_MS. `plain` (logging out) shows only the logo and the dots.
  */
 export function SplashScreen({
   until,
   minShowMs = MIN_SHOW_MS,
+  plain = false,
   onDone,
 }: {
   until?: Promise<void>;
   minShowMs?: number;
+  plain?: boolean;
   onDone: () => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -102,23 +104,29 @@ export function SplashScreen({
         <View style={styles.logoCard}>
           <Image source={FazlLogo} style={styles.logo} resizeMode="contain" />
         </View>
-        {/* Fixed sizes: the phone's font-size setting doesn't enlarge them. */}
-        <AppText variant="title" color={colors.white} style={styles.title} allowFontScaling={false}>
-          {t('Seller Central')}
-        </AppText>
-        <AppText color={colors.primaryTint} align="center" style={styles.tagline} allowFontScaling={false}>
-          {t('Your products, orders and deliveries in one place')}
-        </AppText>
+        {!plain && (
+          <>
+            {/* Fixed sizes: the phone's font-size setting doesn't enlarge them. */}
+            <AppText variant="title" color={colors.white} style={styles.title} allowFontScaling={false}>
+              {t('Seller Central')}
+            </AppText>
+            <AppText color={colors.primaryTint} align="center" style={styles.tagline} allowFontScaling={false}>
+              {t('Your products, orders and deliveries in one place')}
+            </AppText>
+          </>
+        )}
         <AnimatedDots />
       </Animated.View>
-      <AppText
-        variant="caption"
-        color={colors.primaryTint}
-        style={[styles.footer, { bottom: insets.bottom + spacing.xl }]}
-        allowFontScaling={false}
-      >
-        {t('by Fazl')}
-      </AppText>
+      {!plain && (
+        <AppText
+          variant="caption"
+          color={colors.primaryTint}
+          style={[styles.footer, { bottom: insets.bottom + spacing.xl }]}
+          allowFontScaling={false}
+        >
+          {t('by Fazl')}
+        </AppText>
+      )}
     </Animated.View>
   );
 }

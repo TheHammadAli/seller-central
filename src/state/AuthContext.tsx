@@ -16,13 +16,13 @@ import { Seller, Shop } from '../types/models';
 import { stopPush } from '../push';
 
 /**
- * The splash over the app: at start, after logging in and on logging out.
- * `until` settles once what it covers is ready — Home's data loaded (start,
- * login), or the logout done — and `id` tells one splash from the next.
+ * The splash over the app: at start and on logging out (not after logging
+ * in). `until` settles once what it covers is ready — Home's data loaded
+ * (start), or the logout done — and `id` tells one splash from the next.
  */
 export interface Splash {
   id: number;
-  reason: 'start' | 'login' | 'logout';
+  reason: 'start' | 'logout';
   until: Promise<void>;
 }
 
@@ -94,13 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const showSplash = (reason: Splash['reason'], until: Promise<void>) =>
       setSplash(s => ({ id: (s?.id ?? 0) + 1, reason, until }));
 
-    // Logged in: Home's data starts loading and the splash covers it, raised
-    // in the same update as the switch, so Home never shows before it.
-    const signedIn = (next: Seller) => {
-      if (next.shop) preloadDashboard(next.shop.id, next.id);
-      setSeller(next);
-      showSplash('login', whenDashboardPreloaded());
-    };
+    // Logged in: straight to Home, which loads its own data — no splash.
+    const signedIn = (next: Seller) => setSeller(next);
 
     return {
       seller,

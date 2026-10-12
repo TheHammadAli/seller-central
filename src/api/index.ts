@@ -113,7 +113,7 @@ export async function getDashboard(shopId: string, userId: string): Promise<Dash
   });
 }
 
-// Home's data, loaded behind the splash (at start and after login) so Home
+// Home's data, loaded behind the splash at start so Home
 // opens with it. Home takes this request over instead of sending its own.
 const PRELOAD_FRESH_MS = 30_000;
 let preloadedDashboard: { key: string; at: number; promise: Promise<Dashboard> } | null = null;

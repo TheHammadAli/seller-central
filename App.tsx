@@ -45,22 +45,25 @@ function App() {
   );
 }
 
-/** How long the splash after logging in stays at least, while Home loads. */
-const LOGIN_SPLASH_MS = 3000;
+/** How long the splash on logging out stays at least. */
+const LOGOUT_SPLASH_MS = 2500;
 
 /**
- * On top while the app underneath gets ready, then fades out: at start,
- * after logging in (Home's data loads behind it) and while logging out (the
- * login screen is underneath when it fades). Each one starts afresh.
+ * On top while the app underneath gets ready, then fades out: at start
+ * (Home's data loads behind it) and while logging out (the login screen is
+ * underneath when it fades) — then just the logo and the loading dots, no
+ * text. Each one starts afresh.
  */
 function SplashOverlay() {
   const { splash, splashDone } = useAuth();
   if (!splash) return null;
+  const loggingOut = splash.reason === 'logout';
   return (
     <SplashScreen
       key={splash.id}
       until={splash.until}
-      minShowMs={splash.reason === 'login' ? LOGIN_SPLASH_MS : undefined}
+      minShowMs={loggingOut ? LOGOUT_SPLASH_MS : undefined}
+      plain={loggingOut}
       onDone={() => splashDone(splash.id)}
     />
   );
