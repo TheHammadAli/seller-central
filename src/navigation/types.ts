@@ -31,6 +31,8 @@ export type RootStackParamList = {
   Inventory: { filter?: 'low' | 'out' } | undefined;
   AddPost: { type?: PostType } | undefined;
   Posts: undefined;
+  /** A video played full screen: a posted one's URL, or a picked file's. */
+  VideoPlayer: { uri: string; title?: string };
   Ads: undefined;
   CampaignForm: { campaignId?: string } | undefined;
   CampaignDetail: { campaignId: string };

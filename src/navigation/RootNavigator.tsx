@@ -15,6 +15,7 @@ import { CourierFormScreen } from '../screens/orders/CourierFormScreen';
 import { OrderDetailScreen } from '../screens/orders/OrderDetailScreen';
 import { AddPostScreen } from '../screens/posts/AddPostScreen';
 import { PostsScreen } from '../screens/posts/PostsScreen';
+import { VideoPlayerScreen } from '../screens/posts/VideoPlayerScreen';
 import { PricingScreen } from '../screens/pricing/PricingScreen';
 import { ProductFormScreen } from '../screens/products/ProductFormScreen';
 import { BusinessProfileScreen } from '../screens/profile/BusinessProfileScreen';
@@ -66,6 +67,11 @@ export function RootNavigator() {
           <Stack.Screen name="Inventory" component={InventoryScreen} />
           <Stack.Screen name="AddPost" component={AddPostScreen} options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="Posts" component={PostsScreen} />
+          <Stack.Screen
+            name="VideoPlayer"
+            component={VideoPlayerScreen}
+            options={{ animation: 'fade', contentStyle: { backgroundColor: '#000000' } }}
+          />
           <Stack.Screen name="Ads" component={AdsScreen} />
           <Stack.Screen name="CampaignForm" component={CampaignFormScreen} />
           <Stack.Screen name="CampaignDetail" component={CampaignDetailScreen} />

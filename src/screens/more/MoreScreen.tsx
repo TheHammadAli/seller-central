@@ -30,7 +30,7 @@ import { FEATURES } from '../../config';
 
 type Target = Exclude<
   keyof RootStackParamList,
-  'Login' | 'NoShop' | 'Tabs' | 'OrderDetail' | 'AssignRider' | 'CourierForm' | 'CampaignDetail'
+  'Login' | 'NoShop' | 'Tabs' | 'OrderDetail' | 'AssignRider' | 'CourierForm' | 'CampaignDetail' | 'VideoPlayer'
 >;
 
 const GROUPS: { title: string; items: { label: string; hint: string; icon: LucideIcon; tone: Tone; to: Target }[] }[] = [

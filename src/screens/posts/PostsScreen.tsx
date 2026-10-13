@@ -1,6 +1,7 @@
-import { Clapperboard, Plus, Trash2 } from 'lucide-react-native';
+import { Clapperboard, Play, Plus, Trash2 } from 'lucide-react-native';
 import React from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import Video from 'react-native-video';
 import { deleteShopVideo, listShopProducts, listShopVideos } from '../../api/shopContent';
 import { AppText, Badge, Card, EmptyState, Header, Screen, StateView, Thumb } from '../../components';
 import { useLoad } from '../../hooks/useLoad';
@@ -89,7 +90,10 @@ export function PostsScreen({ navigation }: RootScreenProps<'Posts'>) {
           }
           renderItem={({ item }) => (
             <Card style={styles.card}>
-              <Thumb icon={Clapperboard} size={72} />
+              <VideoTile
+                uri={item.media[0]}
+                onPress={() => navigation.navigate('VideoPlayer', { uri: item.media[0], title: item.caption })}
+              />
               <View style={styles.flex}>
                 <View style={styles.topRow}>
                   <Badge label={item.isListing ? t('Product video') : t('Video post')} tone={item.isListing ? 'primary' : 'purple'} />
@@ -115,8 +119,57 @@ export function PostsScreen({ navigation }: RootScreenProps<'Posts'>) {
   );
 }
 
+/**
+ * The video's first frame with a play badge (as on the Fazl app's shop page);
+ * tapping it plays the video. A post with no video file shows the icon alone.
+ */
+function VideoTile({ uri, onPress }: { uri?: string; onPress: () => void }) {
+  if (!uri) return <Thumb icon={Clapperboard} size={TILE} />;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={styles.tile}
+      accessibilityRole="button"
+      accessibilityLabel={t('Play video')}
+    >
+      <Video
+        source={{ uri }}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+        paused
+        muted
+        // A still preview only: without this the video surface can take the
+        // tap meant for the tile, and the video never opens.
+        pointerEvents="none"
+      />
+      <View style={styles.playBadge} pointerEvents="none">
+        <Play size={16} color={colors.white} fill={colors.white} />
+      </View>
+    </Pressable>
+  );
+}
+
+const TILE = 72;
+
 const styles = themedStyles(() => StyleSheet.create({
   flex: { flex: 1, gap: 4 },
+  tile: {
+    width: TILE,
+    height: TILE,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#1F2937',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   add: {
     width: 38,
     height: 38,

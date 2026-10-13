@@ -739,6 +739,8 @@ const ur: Record<string, string> = {
   "Couldn't load this": 'یہ لوڈ نہیں ہو سکا',
   'Could not save': 'محفوظ نہیں ہو سکا',
   'Try again': 'دوبارہ کوشش کریں',
+  'Play video': 'ویڈیو چلائیں',
+  "This video couldn't be played.": 'یہ ویڈیو نہیں چل سکی۔',
   'Try Again': 'دوبارہ کوشش کریں',
   'Back to options': 'اختیارات پر واپس',
 };

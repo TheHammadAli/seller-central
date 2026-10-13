@@ -178,9 +178,16 @@ function VideoPostForm({ canChangeType, onChangeType }: { canChangeType: boolean
           {thumbnail ? (
             <Image source={{ uri: thumbnail }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : null}
-          <View style={styles.play}>
+          {/* Plays the picked video, to check it before posting. */}
+          <Pressable
+            onPress={() => navigation.navigate('VideoPlayer', { uri: video.uri, title: caption.trim() || undefined })}
+            style={styles.play}
+            hitSlop={24}
+            accessibilityRole="button"
+            accessibilityLabel={t('Play video')}
+          >
             <Play size={30} color={colors.white} fill={colors.white} />
-          </View>
+          </Pressable>
           <Pressable
             onPress={() => {
               setVideo(null);
