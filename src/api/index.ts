@@ -40,11 +40,15 @@ import { listCampaigns } from './campaigns';
 export { listCampaigns, getCampaign, saveCampaign, setCampaignStatus } from './campaigns';
 export type { CampaignInput } from './campaigns';
 import {
+  getNotificationSwitches,
   listSellerNotifications,
   markAllSellerNotificationsRead,
   markSellerNotificationRead,
+  NotificationSwitches,
   sellerUnreadCount,
+  setNotificationSwitches,
 } from './notifications';
+import { ApiError } from './http';
 import { t } from '../i18n';
 
 const LATENCY_MS = 250;
@@ -482,11 +486,51 @@ export function markNotificationRead(id: string): Promise<void> {
   return markSellerNotificationRead(id);
 }
 
-export async function getSettings(): Promise<SellerSettings> {
-  return respond(db.settings);
+/** Each notification switch on Fazl, and the setting it shows as. */
+const SWITCH_SETTINGS: [keyof NotificationSwitches, keyof SellerSettings][] = [
+  ['newOrders', 'notifyNewOrders'],
+  ['lowStock', 'notifyLowStock'],
+  ['riders', 'notifyRiders'],
+  ['ads', 'notifyAds'],
+];
+
+function applySwitches(switches: NotificationSwitches) {
+  for (const [key, setting] of SWITCH_SETTINGS) {
+    Object.assign(db.settings, { [setting]: switches[key] });
+  }
 }
 
-export async function saveSettings(next: SellerSettings): Promise<SellerSettings> {
-  Object.assign(db.settings, next);
-  return respond(db.settings);
+/**
+ * The seller's settings. Given the account, the notification switches are
+ * Fazl's for it; the rest are the app's own for now (sample defaults). A
+ * backend from before the switches gives the app's own for those too.
+ */
+export async function getSettings(userId?: string): Promise<SellerSettings> {
+  if (userId) {
+    try {
+      applySwitches(await getNotificationSwitches(userId));
+    } catch (e) {
+      if (!(e instanceof ApiError && e.status === 404)) throw e;
+    }
+  }
+  return { ...db.settings };
+}
+
+/**
+ * Saves the settings. A notification switch that changed is saved on Fazl
+ * for the account (so it holds on every phone, and the push stops or starts);
+ * if that fails, this throws and the switch hasn't changed.
+ */
+export async function saveSettings(next: SellerSettings, userId?: string): Promise<SellerSettings> {
+  const changes: Partial<NotificationSwitches> = {};
+  for (const [key, setting] of SWITCH_SETTINGS) {
+    if (next[setting] !== db.settings[setting]) changes[key] = next[setting] as boolean;
+  }
+  const rest = { ...next };
+  for (const [, setting] of SWITCH_SETTINGS) delete rest[setting];
+  Object.assign(db.settings, rest);
+  if (userId && Object.keys(changes).length) {
+    applySwitches(await setNotificationSwitches(userId, changes));
+  }
+  return { ...db.settings };
 }

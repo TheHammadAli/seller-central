@@ -1,6 +1,6 @@
 import { CircleHelp, LogOut, ShieldCheck } from 'lucide-react-native';
 import React from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { getSettings, saveSettings } from '../../api';
 import {
   AppText,
@@ -26,7 +26,7 @@ import { language, t } from '../../i18n';
 export function SettingsScreen() {
   const { seller, signOut } = useAuth();
   const appearance = useAppearance();
-  const { data, setData, error, reload } = useLoad(getSettings);
+  const { data, setData, error, reload } = useLoad(() => getSettings(seller?.id), [seller?.id]);
 
   if (!data) {
     return (
@@ -37,9 +37,14 @@ export function SettingsScreen() {
   }
 
   const update = <K extends keyof SellerSettings>(key: K, value: SellerSettings[K]) => {
+    const was = data[key];
     const next = { ...data, [key]: value };
     setData(next);
-    saveSettings(next);
+    // A notification switch is saved on Fazl; if that fails, it flips back.
+    saveSettings(next, seller?.id).catch(e => {
+      setData(d => (d ? { ...d, [key]: was } : d));
+      Alert.alert(t("Couldn't save"), e instanceof Error ? e.message : '');
+    });
   };
 
   return (

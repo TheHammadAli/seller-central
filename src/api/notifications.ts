@@ -74,3 +74,30 @@ export async function markSellerNotificationRead(id: string): Promise<void> {
 export async function markAllSellerNotificationsRead(userId: string): Promise<void> {
   await api(`/notifications/${userId}/seller/read-all`, { method: 'PATCH' });
 }
+
+/**
+ * Settings' notification switches, kept by Fazl for the account: one that's
+ * off isn't pushed to any of the seller's phones (it still shows in the
+ * Notifications list).
+ */
+export interface NotificationSwitches {
+  newOrders: boolean;
+  lowStock: boolean;
+  riders: boolean;
+  ads: boolean;
+}
+
+export function getNotificationSwitches(userId: string): Promise<NotificationSwitches> {
+  return api<NotificationSwitches>(`/notifications/${userId}/seller/settings`);
+}
+
+/** Turns the given switches on or off; returns all of them as saved. */
+export function setNotificationSwitches(
+  userId: string,
+  changes: Partial<NotificationSwitches>,
+): Promise<NotificationSwitches> {
+  return api<NotificationSwitches>(`/notifications/${userId}/seller/settings`, {
+    method: 'PATCH',
+    body: changes,
+  });
+}

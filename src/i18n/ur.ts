@@ -660,6 +660,7 @@ const ur: Record<string, string> = {
   'Fazl shows the regular price again right away.': 'فضل فوراً دوبارہ اصل قیمت دکھائے گا۔',
   "Couldn't end the sale": 'سیل ختم نہیں ہو سکی',
   "Couldn't save the sale": 'سیل محفوظ نہیں ہو سکی',
+  "Couldn't save": 'محفوظ نہیں ہو سکا',
   'Enter the sale price as a whole number of at least 1.': 'سیل کی قیمت کم از کم 1 کا پورا عدد درج کریں۔',
   'The sale price must be lower than the regular price.': 'سیل کی قیمت اصل قیمت سے کم ہونی چاہیے۔',
   'The sale must end after it starts.': 'سیل شروع ہونے کے بعد ختم ہونی چاہیے۔',
