@@ -19,7 +19,7 @@ import {
 } from 'lucide-react-native';
 import { ChevronForward } from '../../components/Chevrons';
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Alert, Image, StyleSheet, View } from 'react-native';
 import { AppText, Card, Header, IconCircle, ListRow, Screen } from '../../components';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
@@ -75,10 +75,39 @@ export function MoreScreen() {
   const navigation = useNavigation();
   const { seller, signOut } = useAuth();
   const shop = seller?.shop;
+  const member = seller?.member;
+  const perms = member?.permissions ?? ['orders', 'products', 'marketing'];
+
+  const filteredGroups = GROUPS.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      if (item.to === 'Earnings' || item.to === 'BusinessProfile') {
+        return !member; // Owner only
+      }
+      if (item.to === 'Inventory' || item.to === 'Pricing') {
+        return !member || perms.includes('products');
+      }
+      if (item.to === 'Posts' || item.to === 'Ads') {
+        return !member || perms.includes('marketing');
+      }
+      if (item.to === 'Returns' || item.to === 'LocalDelivery' || item.to === 'Shipping') {
+        return !member || perms.includes('orders');
+      }
+      return true;
+    }),
+  })).filter(g => g.items.length > 0);
+
+  const onShopPress = () => {
+    if (member) {
+      Alert.alert(t('Business profile'), t('Only the shop owner can edit the business profile.'));
+      return;
+    }
+    navigation.navigate('BusinessProfile');
+  };
 
   return (
     <Screen header={<Header title={t('More')} back={false} />} bottomInset={false}>
-      <Card onPress={() => navigation.navigate('BusinessProfile')} style={styles.shop}>
+      <Card onPress={onShopPress} style={styles.shop}>
         {shop?.logo ? <Image source={{ uri: shop.logo }} style={styles.logo} /> : <IconCircle icon={Store} size={56} />}
         <View style={styles.flex}>
           <AppText variant="subheading" numberOfLines={1}>
@@ -90,9 +119,15 @@ export function MoreScreen() {
               {shop?.area}, {shop?.city}
             </AppText>
           </View>
-          <AppText variant="caption" color={colors.primary}>
-            {t('View business profile')}
-          </AppText>
+          {member ? (
+            <AppText variant="caption" color={colors.primary}>
+              {t('Team Member')} ({perms.join(', ')})
+            </AppText>
+          ) : (
+            <AppText variant="caption" color={colors.primary}>
+              {t('View business profile')}
+            </AppText>
+          )}
         </View>
         <ChevronForward size={20} color={colors.textSubtle} />
       </Card>
@@ -108,7 +143,7 @@ export function MoreScreen() {
             onPress={() => navigation.navigate('ChooseShop')}
           />
         </Card>
-      ) : (
+      ) : !member ? (
         <Card padded={false} style={[styles.group, styles.switchCard]}>
           <ListRow
             icon={Plus}
@@ -118,9 +153,9 @@ export function MoreScreen() {
             onPress={() => navigation.navigate('CreateShop')}
           />
         </Card>
-      )}
+      ) : null}
 
-      {GROUPS.map(group => (
+      {filteredGroups.map(group => (
         <View key={group.title}>
           <AppText variant="label" color={colors.textMuted} style={styles.groupTitle}>
             {group.title.toUpperCase()}

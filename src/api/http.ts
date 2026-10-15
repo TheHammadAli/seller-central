@@ -13,6 +13,7 @@ const UPLOAD_TIMEOUT_MS = 5 * 60_000;
 export interface Tokens {
   accessToken: string;
   refreshToken?: string;
+  isMember?: boolean;
 }
 
 export class ApiError extends Error {
@@ -126,7 +127,10 @@ function refreshOnce(): Promise<boolean> {
   if (!refreshing) {
     refreshing = (async () => {
       try {
-        const res = await send('/auth/refreshToken', {
+        const refreshPath = tokens?.isMember
+          ? '/seller/members/session/refresh'
+          : '/auth/refreshToken';
+        const res = await send(refreshPath, {
           method: 'POST',
           body: { token: tokens?.refreshToken },
         }, false);
@@ -135,6 +139,7 @@ function refreshOnce(): Promise<boolean> {
         await saveTokens({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken ?? tokens?.refreshToken,
+          isMember: tokens?.isMember,
         });
         return true;
       } catch {

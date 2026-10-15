@@ -165,6 +165,8 @@ export interface ShopProfileDraft {
   categoryId?: string;
   logo?: UploadFile;
   banner?: UploadFile;
+  /** Delivery charge in PKR (whole rupees); 0 means free delivery. */
+  deliveryCharge?: number;
 }
 
 /**
@@ -181,6 +183,8 @@ export async function updateShopProfile(shopId: string, d: ShopProfileDraft): Pr
   form.append('city', d.city);
   form.append('contact', d.contact);
   form.append('openingHours', d.openingHours);
+  if (d.deliveryCharge !== undefined)
+    form.append('deliveryCharge', String(Math.round(Number(d.deliveryCharge) || 0)));
   if (d.categoryId) {
     // As the Fazl app sends it: the subcategory mirrors the category.
     form.append('category', d.categoryId);

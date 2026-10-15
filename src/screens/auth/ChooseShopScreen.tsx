@@ -79,8 +79,8 @@ function ShopPicker({ switching }: { switching: boolean }) {
   // Suspended shops aren't in the list (see api/session.ts).
   const shops = seller?.shops ?? [];
   const firstName = (seller?.name ?? '').split(' ')[0];
-  // Fazl allows an account 3 shops that aren't suspended.
-  const canCreate = shops.length < MAX_SHOPS;
+  // Fazl allows an account 3 shops that aren't suspended. Team members cannot create shops.
+  const canCreate = !seller?.member && shops.length < MAX_SHOPS;
 
   return (
     <Screen

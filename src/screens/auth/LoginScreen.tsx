@@ -1,4 +1,4 @@
-import { Languages, Lock, Store } from 'lucide-react-native';
+import { Languages, Lock, Store, Users } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -20,7 +20,8 @@ import { LANGUAGE_NAMES } from '../../utils/chooseLanguage';
 import { isUrdu, setLanguage, t } from '../../i18n';
 
 export function LoginScreen() {
-  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
+  const { signIn, signInAsMember, signInWithGoogle, signInWithApple } = useAuth();
+  const [mode, setMode] = useState<'owner' | 'member'>('owner');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
@@ -36,7 +37,11 @@ export function LoginScreen() {
 
     setLoading('email');
     try {
-      await signIn(email.trim(), password);
+      if (mode === 'member') {
+        await signInAsMember(email.trim(), password);
+      } else {
+        await signIn(email.trim(), password);
+      }
     } catch (e) {
       setErrors({ form: e instanceof Error ? e.message : t('Could not log in') });
       setLoading(null);
@@ -86,13 +91,53 @@ export function LoginScreen() {
         </AppText>
       </Pressable>
 
+      <View style={styles.segmentWrap}>
+        <TouchableOpacity
+          style={[styles.segmentBtn, mode === 'owner' && styles.segmentBtnActive]}
+          onPress={() => {
+            setMode('owner');
+            setErrors({});
+          }}
+          activeOpacity={0.8}
+        >
+          <Store size={16} color={mode === 'owner' ? colors.primary : colors.textMuted} />
+          <AppText
+            variant="label"
+            color={mode === 'owner' ? colors.primary : colors.textMuted}
+            style={mode === 'owner' ? styles.segmentTextActive : styles.segmentText}
+          >
+            {t('Shop Owner')}
+          </AppText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.segmentBtn, mode === 'member' && styles.segmentBtnActive]}
+          onPress={() => {
+            setMode('member');
+            setErrors({});
+          }}
+          activeOpacity={0.8}
+        >
+          <Users size={16} color={mode === 'member' ? colors.primary : colors.textMuted} />
+          <AppText
+            variant="label"
+            color={mode === 'member' ? colors.primary : colors.textMuted}
+            style={mode === 'member' ? styles.segmentTextActive : styles.segmentText}
+          >
+            {t('Team Member')}
+          </AppText>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.brand}>
-        <IconCircle icon={Store} size={72} />
+        <IconCircle icon={mode === 'member' ? Users : Store} size={72} />
         <AppText variant="title" align="center">
-          {t('Fazl Seller Central')}
+          {mode === 'member' ? t('Team Member Login') : t('Fazl Seller Central')}
         </AppText>
         <AppText color={colors.textMuted} align="center">
-          {t("Manage your shop's products, orders and deliveries. Log in with your Fazl account.")}
+          {mode === 'member'
+            ? t('Sign in with your team credentials to manage assigned shop orders, products, and ads.')
+            : t("Manage your shop's products, orders and deliveries. Log in with your Fazl account.")}
         </AppText>
       </View>
 
@@ -130,7 +175,12 @@ export function LoginScreen() {
         style={styles.forgot}
         hitSlop={8}
         onPress={() =>
-          Alert.alert(t('Forgot password'), t('Reset your password from the Fazl app, then log in here with the new one.'))
+          Alert.alert(
+            t('Forgot password'),
+            mode === 'member'
+              ? t('Ask your shop owner to update or reset your team credentials.')
+              : t('Reset your password from the Fazl app, then log in here with the new one.')
+          )
         }
       >
         <AppText style={styles.forgotText}>{t('Forgot Password?')}</AppText>
@@ -146,49 +196,55 @@ export function LoginScreen() {
       ) : null}
 
       <DoodleButton
-        title={t('Log in')}
+        title={mode === 'member' ? t('Log in as Team Member') : t('Log in')}
         onPress={submit}
         loading={loading === 'email'}
         loadingText={t('Logging in')}
         disabled={loading !== null || !email.trim() || !password}
       />
 
-      <View style={styles.divider}>
-        <View style={styles.line} />
-        <AppText color={colors.textMuted}>{t('or')}</AppText>
-        <View style={styles.line} />
-      </View>
+      {mode === 'owner' ? (
+        <>
+          <View style={styles.divider}>
+            <View style={styles.line} />
+            <AppText color={colors.textMuted}>{t('or')}</AppText>
+            <View style={styles.line} />
+          </View>
 
-      <TouchableOpacity
-        style={styles.google}
-        onPress={google}
-        disabled={loading !== null}
-        activeOpacity={0.8}
-        accessibilityRole="button"
-      >
-        {loading === 'google' ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : (
-          <>
-            <Image source={GoogleIcon} style={styles.googleIcon} />
-            <AppText style={styles.googleText}>{t('Continue with Google')}</AppText>
-          </>
-        )}
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.google}
+            onPress={google}
+            disabled={loading !== null}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+          >
+            {loading === 'google' ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <>
+                <Image source={GoogleIcon} style={styles.googleIcon} />
+                <AppText style={styles.googleText}>{t('Continue with Google')}</AppText>
+              </>
+            )}
+          </TouchableOpacity>
 
-      {/* Apple's own button, iPhone only (as in the Fazl app). */}
-      {isAppleSignInAvailable ? (
-        <AppleButton
-          buttonStyle={AppleButton.Style.BLACK}
-          buttonType={AppleButton.Type.CONTINUE}
-          cornerRadius={12}
-          style={[styles.apple, loading !== null && styles.dimmed]}
-          onPress={apple}
-        />
+          {/* Apple's own button, iPhone only (as in the Fazl app). */}
+          {isAppleSignInAvailable ? (
+            <AppleButton
+              buttonStyle={AppleButton.Style.BLACK}
+              buttonType={AppleButton.Type.CONTINUE}
+              cornerRadius={12}
+              style={[styles.apple, loading !== null && styles.dimmed]}
+              onPress={apple}
+            />
+          ) : null}
+        </>
       ) : null}
 
       <AppText variant="caption" color={colors.textMuted} align="center" style={styles.note}>
-        {t("Log in with your Fazl account. Don't have a shop yet? You can create one here after logging in.")}
+        {mode === 'member'
+          ? t('Team members only have access to Seller Central and the specific permissions granted by the shop owner.')
+          : t("Log in with your Fazl account. Don't have a shop yet? You can create one here after logging in.")}
       </AppText>
     </Screen>
   );
@@ -206,6 +262,39 @@ const styles = themedStyles(() => StyleSheet.create({
     borderRadius: 999,
     backgroundColor: colors.primarySoft,
     marginBottom: spacing.lg,
+  },
+  segmentWrap: {
+    flexDirection: 'row',
+    backgroundColor: colors.background,
+    padding: 4,
+    borderRadius: 12,
+    marginBottom: spacing.lg,
+    gap: 4,
+  },
+  segmentBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  segmentBtnActive: {
+    backgroundColor: colors.surface,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  segmentText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+  },
+  segmentTextActive: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
   },
   brand: { alignItems: 'center', gap: spacing.md, marginBottom: spacing.xxl },
   forgot: { alignSelf: 'flex-end', marginTop: -4, marginBottom: spacing.xl },

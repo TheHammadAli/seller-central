@@ -19,6 +19,8 @@ export interface Shop {
   /** Fazl category ids; they decide which categories its products may use. */
   categoryId?: string;
   subcategoryId?: string;
+  /** Delivery charge in PKR the owner has set; 0 means free delivery. */
+  deliveryCharge?: number;
 }
 
 export interface Seller {
@@ -31,6 +33,21 @@ export interface Seller {
   shops: Shop[];
   /** The one Seller Central is managing; null until one is chosen (or none exist). */
   shop: Shop | null;
+  /** Present only when this session belongs to a team member (not the owner). */
+  member?: SellerMember;
+}
+
+export type SellerMemberPermission = 'orders' | 'products' | 'marketing';
+
+/** A shop-owner's team member, logged in through the team login screen. */
+export interface SellerMember {
+  id: string;
+  name: string;
+  email: string;
+  /** What this member is allowed to do in Seller Central. */
+  permissions: SellerMemberPermission[];
+  /** The user id of the shop owner whose account this member operates under. */
+  ownerId: string;
 }
 
 /** One kind of choice a product comes in, e.g. Size: S, M, L. */

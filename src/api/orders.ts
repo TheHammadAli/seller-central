@@ -142,6 +142,10 @@ function toOrder(o: BackendOrder): Order {
     .map(v => String(v ?? '').trim())
     .filter(Boolean)
     .join(' / ');
+  // The backend now stores a snapshot of the shop's delivery charge on the order.
+  // Older orders pre-dating this feature have deliveryCharge = 0.
+  const deliveryCharge = Math.round(Number((o as any).deliveryCharge ?? 0));
+  const subtotal = Math.max(0, (o.amount || 0) - deliveryCharge);
   return {
     id: o.id,
     number: o.orderCode || `#${o.id.slice(-6).toUpperCase()}`,
@@ -162,14 +166,12 @@ function toOrder(o: BackendOrder): Order {
         image: cardImage(o.product?.images?.[0] ?? undefined),
         ...(variant ? { variant } : {}),
         qty,
-        unitPrice: Math.round((o.amount || 0) / qty),
+        unitPrice: Math.round(subtotal / qty),
       },
     ],
     payment: o.paymentType === 'Easypaisa' ? 'easypaisa' : 'cod',
-    // What the customer pays, as the order says; Fazl charges and delivery
-    // fees aren't split out on Fazl yet.
-    subtotal: o.amount || 0,
-    deliveryCharge: 0,
+    subtotal,
+    deliveryCharge,
     discount: 0,
     fazlCharge: 0,
     // What was paid back; it comes off the seller's earnings.
