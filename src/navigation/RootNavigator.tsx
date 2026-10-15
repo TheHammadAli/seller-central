@@ -13,6 +13,7 @@ import { NotificationsScreen } from '../screens/notifications/NotificationsScree
 import { AssignRiderScreen } from '../screens/orders/AssignRiderScreen';
 import { CourierFormScreen } from '../screens/orders/CourierFormScreen';
 import { OrderDetailScreen } from '../screens/orders/OrderDetailScreen';
+import { SelfDeliveryScreen } from '../screens/orders/SelfDeliveryScreen';
 import { AddPostScreen } from '../screens/posts/AddPostScreen';
 import { PostsScreen } from '../screens/posts/PostsScreen';
 import { VideoPlayerScreen } from '../screens/posts/VideoPlayerScreen';
@@ -64,6 +65,7 @@ export function RootNavigator() {
           <Stack.Screen name="CreateShop" component={CreateShopScreen} />
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
           <Stack.Screen name="AssignRider" component={AssignRiderScreen} />
+          <Stack.Screen name="SelfDelivery" component={SelfDeliveryScreen} />
           <Stack.Screen name="CourierForm" component={CourierFormScreen} />
           <Stack.Screen name="ProductForm" component={ProductFormScreen} />
           <Stack.Screen name="Inventory" component={InventoryScreen} />

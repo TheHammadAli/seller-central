@@ -804,6 +804,7 @@ const ur: Record<string, string> = {
   'Send invite': 'دعوت بھیجیں',
   Sending: 'بھیجا جا رہا ہے',
   Email: 'ای میل',
+  'e.g. Ali Khan': 'مثلاً علی خان',
   'We email them a 6-digit code to join with.': 'ہم انہیں شامل ہونے کے لیے 6 ہندسوں کا کوڈ ای میل کریں گے۔',
   'What they can do': 'وہ کیا کر سکتے ہیں',
   'Pause access': 'رسائی روکیں',
@@ -812,6 +813,27 @@ const ur: Record<string, string> = {
   'Send invite again': 'دعوت دوبارہ بھیجیں',
   'Remove from team': 'ٹیم سے ہٹائیں',
   Removing: 'ہٹایا جا رہا ہے',
+  // Team roles: managers and riders; picking the rider for a self delivery.
+  Manager: 'مینیجر',
+  Rider: 'رائیڈر',
+  Role: 'کردار',
+  'Phone number': 'فون نمبر',
+  'Enter a valid phone number': 'درست فون نمبر درج کریں',
+  'You and your managers call the rider on this number about a delivery.':
+    'ڈیلیوری کے بارے میں آپ اور آپ کے مینیجر اس نمبر پر رائیڈر کو کال کریں گے۔',
+  'Riders deliver the orders you deliver yourself. When an order goes out, you or a manager pick the rider. A rider can log in to see and update orders only.':
+    'رائیڈر وہ آرڈرز ڈیلیور کرتے ہیں جو آپ خود ڈیلیور کرتے ہیں۔ آرڈر روانہ کرتے وقت آپ یا کوئی مینیجر رائیڈر چنتا ہے۔ رائیڈر لاگ ان کر کے صرف آرڈرز دیکھ اور اپ ڈیٹ کر سکتا ہے۔',
+  'Who is delivering?': 'کون ڈیلیور کر رہا ہے؟',
+  "I'm delivering it myself": 'میں خود ڈیلیور کر رہا ہوں',
+  'The order shows as "Out for delivery" to the customer.': 'گاہک کو آرڈر "ڈیلیوری کے لیے روانہ" دکھائی دے گا۔',
+  'Your riders': 'آپ کے رائیڈرز',
+  'No riders on your team yet. Add one in More > Team, as a Rider.':
+    'ابھی آپ کی ٹیم میں کوئی رائیڈر نہیں۔ مزید > ٹیم میں جا کر "رائیڈر" کے طور پر شامل کریں۔',
+  'No riders on the team yet. The shop owner adds them.': 'ابھی ٹیم میں کوئی رائیڈر نہیں۔ دکان کا مالک انہیں شامل کرتا ہے۔',
+  'Add a rider': 'رائیڈر شامل کریں',
+  'Your team rider is delivering this order': 'آپ کی ٹیم کا رائیڈر یہ آرڈر ڈیلیور کر رہا ہے',
+  '{name} is delivering': '{name} ڈیلیور کر رہا ہے',
+
   'They log in to Seller Central only, on all your shops. Earnings, the business profile and the team stay with you.':
     'وہ صرف سیلر سینٹرل میں، آپ کی تمام دکانوں پر لاگ ان کرتے ہیں۔ کمائی، کاروباری پروفائل اور ٹیم صرف آپ کے پاس رہتے ہیں۔',
 };

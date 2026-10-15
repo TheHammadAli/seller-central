@@ -1,6 +1,6 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { PostType, TeamMember } from '../types/models';
+import { PostType, TeamMember, TeamMemberRole } from '../types/models';
 
 export type TabParamList = {
   Home: undefined;
@@ -26,6 +26,8 @@ export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   OrderDetail: { orderId: string };
   AssignRider: { orderId: string };
+  /** A ready order going out with the shop delivering it: who takes it. */
+  SelfDelivery: { orderId: string };
   CourierForm: { orderId: string };
   ProductForm: { productId?: string } | undefined;
   Inventory: { filter?: 'low' | 'out' } | undefined;
@@ -46,8 +48,8 @@ export type RootStackParamList = {
   Settings: undefined;
   /** The owner's team (owner only). */
   Team: undefined;
-  /** Inviting someone (no member), or changing an existing member. */
-  TeamMemberForm: { member?: TeamMember } | undefined;
+  /** Inviting someone (no member; `role` to start from), or changing an existing member. */
+  TeamMemberForm: { member?: TeamMember; role?: TeamMemberRole } | undefined;
 };
 
 export type RootScreenProps<T extends keyof RootStackParamList> =

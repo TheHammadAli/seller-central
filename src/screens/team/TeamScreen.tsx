@@ -7,8 +7,13 @@ import { ChevronForward } from '../../components/Chevrons';
 import { useLoad } from '../../hooks/useLoad';
 import { RootScreenProps } from '../../navigation/types';
 import { colors, spacing, themedStyles, Tone } from '../../theme';
-import { SellerMemberPermission, TeamMemberStatus } from '../../types/models';
+import { SellerMemberPermission, TeamMemberRole, TeamMemberStatus } from '../../types/models';
 import { t } from '../../i18n';
+
+export const ROLE_LABELS: Record<TeamMemberRole, string> = {
+  manager: t('Manager'),
+  rider: t('Rider'),
+};
 
 export const PERMISSION_LABELS: Record<SellerMemberPermission, string> = {
   orders: t('Orders'),
@@ -87,7 +92,9 @@ export function TeamScreen({ navigation }: RootScreenProps<'Team'>) {
                     {item.email}
                   </AppText>
                   <AppText variant="caption" color={colors.primary} numberOfLines={1}>
-                    {item.permissions.map(p => PERMISSION_LABELS[p]).join(' · ')}
+                    {item.role === 'rider'
+                      ? [ROLE_LABELS.rider, item.phone].filter(Boolean).join(' · ')
+                      : [ROLE_LABELS.manager, ...item.permissions.map(p => PERMISSION_LABELS[p])].join(' · ')}
                   </AppText>
                 </View>
                 <Badge label={badge.label} tone={badge.tone} />

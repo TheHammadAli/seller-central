@@ -41,6 +41,8 @@ interface BackendOrder {
   deliveryOption: 'delivery' | 'self-pickup';
   /** Who is taking it to the customer, once it leaves the shop. */
   deliveryMethod?: 'self' | 'rider' | 'courier' | null;
+  /** The shop's team rider taking it, when the shop delivers it itself. */
+  deliveryMember?: { id: string; name: string; phone?: string | null } | null;
   /** The courier and its tracking ID (orders sent by courier). */
   courierName?: string | null;
   trackingId?: string | null;
@@ -104,6 +106,14 @@ function deliveryOf(o: BackendOrder): Order['delivery'] {
     type: 'local',
     ...(o.deliveryMethod === 'self' || o.deliveryMethod === 'rider'
       ? { method: o.deliveryMethod }
+      : {}),
+    // Delivering it themselves, through one of the team's riders.
+    ...(o.deliveryMethod === 'self' && o.deliveryMember
+      ? {
+          riderId: o.deliveryMember.id,
+          riderName: o.deliveryMember.name,
+          riderPhone: o.deliveryMember.phone ?? undefined,
+        }
       : {}),
   };
 }
@@ -289,6 +299,8 @@ export async function getShopOrder(shopId: string, orderId: string): Promise<Ord
  *  order when left out). */
 export interface StatusDetails {
   deliveryMethod?: 'self' | 'courier';
+  /** With "self": the team rider taking it; none when the seller takes it. */
+  deliveryMemberId?: string;
   courierName?: string;
   trackingId?: string;
   reason?: string;

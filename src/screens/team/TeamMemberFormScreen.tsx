@@ -8,12 +8,22 @@ import {
   resendTeamInvite,
   updateTeamMember,
 } from '../../api/team';
-import { AppText, Badge, Button, Card, Header, Screen, TextField, ToggleRow } from '../../components';
+import {
+  AppText,
+  Badge,
+  Button,
+  Card,
+  Header,
+  Screen,
+  Segmented,
+  TextField,
+  ToggleRow,
+} from '../../components';
 import { RootScreenProps } from '../../navigation/types';
 import { colors, spacing, themedStyles } from '../../theme';
-import { SellerMemberPermission } from '../../types/models';
+import { SellerMemberPermission, TeamMemberRole } from '../../types/models';
 import { t } from '../../i18n';
-import { STATUS_BADGES } from './TeamScreen';
+import { ROLE_LABELS, STATUS_BADGES } from './TeamScreen';
 
 const PERMISSIONS: { key: SellerMemberPermission; label: string; description: string }[] = [
   { key: 'orders', label: t('Orders'), description: t('Orders, returns and delivery') },
@@ -22,17 +32,30 @@ const PERMISSIONS: { key: SellerMemberPermission; label: string; description: st
 ];
 
 /**
- * Inviting someone to the owner's team (name, email, what they may do), or
- * changing a member: their permissions, pausing them, a new invite code, or
- * taking them off the team.
+ * Inviting someone to the owner's team (name, email, manager or rider, what
+ * a manager may do, a rider's phone), or changing a member: their role and
+ * permissions, pausing them, a new invite code, or taking them off the team.
  */
 export function TeamMemberFormScreen({ navigation, route }: RootScreenProps<'TeamMemberForm'>) {
   const member = route.params?.member;
   const [name, setName] = useState(member?.name ?? '');
   const [email, setEmail] = useState(member?.email ?? '');
-  const [permissions, setPermissions] = useState<SellerMemberPermission[]>(member?.permissions ?? ['orders']);
+  const [role, setRole] = useState<TeamMemberRole>(
+    member?.role ?? route.params?.role ?? 'manager',
+  );
+  const [phone, setPhone] = useState(member?.phone ?? '');
+  const [permissions, setPermissions] = useState<SellerMemberPermission[]>(
+    // A rider being made a manager starts from orders, as a rider has.
+    member?.permissions?.length ? member.permissions : ['orders'],
+  );
   const [paused, setPaused] = useState(member?.status === 'disabled');
-  const [errors, setErrors] = useState<{ name?: string; email?: string; permissions?: string }>({});
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    permissions?: string;
+  }>({});
+  const isRider = role === 'rider';
   const [busy, setBusy] = useState<'save' | 'resend' | 'remove' | null>(null);
   const joined = member?.status === 'active' || (member?.status === 'disabled' && !!member.joinedAt);
 
@@ -69,16 +92,22 @@ export function TeamMemberFormScreen({ navigation, route }: RootScreenProps<'Tea
     const next: typeof errors = {};
     if (!name.trim()) next.name = t('Required');
     if (!member && !/^\S+@\S+\.\S+$/.test(email.trim())) next.email = t('Enter a valid email');
-    if (permissions.length === 0) next.permissions = t('Choose at least one');
+    if (isRider && !/^\+?[\d\s-]{7,20}$/.test(phone.trim())) next.phone = t('Enter a valid phone number');
+    if (!isRider && permissions.length === 0) next.permissions = t('Choose at least one');
     setErrors(next);
     if (Object.values(next).some(Boolean)) return;
+
+    // A rider's permissions are set by Fazl (orders); a manager's phone is optional.
+    const access = isRider
+      ? { role, phone: phone.trim() }
+      : { role, permissions, ...(phone.trim() ? { phone: phone.trim() } : {}) };
 
     setBusy('save');
     try {
       if (member) {
         await updateTeamMember(member.id, {
           name: name.trim(),
-          permissions,
+          ...access,
           isDisabled: paused,
         });
         navigation.goBack();
@@ -86,7 +115,7 @@ export function TeamMemberFormScreen({ navigation, route }: RootScreenProps<'Tea
         const invite = await inviteTeamMember({
           name: name.trim(),
           email: email.trim(),
-          permissions,
+          ...access,
         });
         showCode(invite, t('Invite sent'));
       }
@@ -156,6 +185,23 @@ export function TeamMemberFormScreen({ navigation, route }: RootScreenProps<'Tea
         </View>
       ) : null}
 
+      <AppText variant="label" color={colors.textMuted} style={styles.groupTitle}>
+        {t('Role').toUpperCase()}
+      </AppText>
+      <View style={styles.role}>
+        <Segmented
+          options={[
+            { key: 'manager', label: ROLE_LABELS.manager },
+            { key: 'rider', label: ROLE_LABELS.rider },
+          ]}
+          value={role}
+          onChange={next => {
+            setRole(next);
+            setErrors(e => ({ ...e, phone: undefined, permissions: undefined }));
+          }}
+        />
+      </View>
+
       <TextField
         label={t('Name')}
         value={name}
@@ -164,6 +210,8 @@ export function TeamMemberFormScreen({ navigation, route }: RootScreenProps<'Tea
           setErrors(e => ({ ...e, name: undefined }));
         }}
         maxLength={80}
+        autoCapitalize="words"
+        placeholder={t('e.g. Ali Khan')}
         error={errors.name}
       />
       <TextField
@@ -182,26 +230,54 @@ export function TeamMemberFormScreen({ navigation, route }: RootScreenProps<'Tea
         error={errors.email}
       />
 
-      <AppText variant="label" color={colors.textMuted} style={styles.groupTitle}>
-        {t('What they can do').toUpperCase()}
-      </AppText>
-      <Card padded={false} style={styles.group}>
-        {PERMISSIONS.map((p, i) => (
-          <ToggleRow
-            key={p.key}
-            label={p.label}
-            description={p.description}
-            value={permissions.includes(p.key)}
-            onChange={toggle(p.key)}
-            divider={i < PERMISSIONS.length - 1}
+      {isRider ? (
+        <>
+          <TextField
+            label={t('Phone number')}
+            value={phone}
+            onChangeText={v => {
+              setPhone(v);
+              setErrors(e => ({ ...e, phone: undefined }));
+            }}
+            keyboardType="phone-pad"
+            maxLength={20}
+            placeholder="0300 1234567"
+            hint={t('You and your managers call the rider on this number about a delivery.')}
+            error={errors.phone}
           />
-        ))}
-      </Card>
-      {errors.permissions ? (
-        <AppText variant="caption" color={colors.danger} style={styles.permError}>
-          {errors.permissions}
-        </AppText>
-      ) : null}
+          <View style={styles.note}>
+            <Info size={16} color={colors.textMuted} />
+            <AppText variant="caption" color={colors.textMuted} style={styles.flex}>
+              {t(
+                'Riders deliver the orders you deliver yourself. When an order goes out, you or a manager pick the rider. A rider can log in to see and update orders only.',
+              )}
+            </AppText>
+          </View>
+        </>
+      ) : (
+        <>
+          <AppText variant="label" color={colors.textMuted} style={styles.groupTitle}>
+            {t('What they can do').toUpperCase()}
+          </AppText>
+          <Card padded={false} style={styles.group}>
+            {PERMISSIONS.map((p, i) => (
+              <ToggleRow
+                key={p.key}
+                label={p.label}
+                description={p.description}
+                value={permissions.includes(p.key)}
+                onChange={toggle(p.key)}
+                divider={i < PERMISSIONS.length - 1}
+              />
+            ))}
+          </Card>
+          {errors.permissions ? (
+            <AppText variant="caption" color={colors.danger} style={styles.permError}>
+              {errors.permissions}
+            </AppText>
+          ) : null}
+        </>
+      )}
 
       {member ? (
         <>
@@ -253,6 +329,7 @@ const styles = themedStyles(() =>
   StyleSheet.create({
     flex: { flex: 1 },
     status: { marginBottom: spacing.md },
+    role: { marginBottom: spacing.lg },
     groupTitle: { marginBottom: spacing.sm, marginLeft: spacing.xs },
     group: { paddingHorizontal: spacing.md },
     permError: { marginTop: spacing.xs, marginLeft: spacing.xs },

@@ -31,7 +31,7 @@ import { FEATURES } from '../../config';
 
 type Target = Exclude<
   keyof RootStackParamList,
-  'Login' | 'NoShop' | 'Tabs' | 'OrderDetail' | 'AssignRider' | 'CourierForm' | 'CampaignDetail' | 'VideoPlayer' | 'TeamMemberForm'
+  'Login' | 'NoShop' | 'Tabs' | 'OrderDetail' | 'AssignRider' | 'CourierForm' | 'CampaignDetail' | 'VideoPlayer' | 'TeamMemberForm' | 'SelfDelivery'
 >;
 
 const GROUPS: { title: string; items: { label: string; hint: string; icon: LucideIcon; tone: Tone; to: Target }[] }[] = [

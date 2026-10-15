@@ -53,16 +53,30 @@ export interface SellerMember {
 /** "invited" until they join with the emailed code; "expired" once it runs out. */
 export type TeamMemberStatus = 'invited' | 'expired' | 'active' | 'disabled';
 
+/** A manager works on orders, products or ads; a rider delivers the shop's own deliveries. */
+export type TeamMemberRole = 'manager' | 'rider';
+
 /** Someone on the owner's team, as the owner manages them (More > Team). */
 export interface TeamMember {
   id: string;
   name: string;
   email: string;
+  role: TeamMemberRole;
+  /** A rider's number, to call them about a delivery. */
+  phone?: string | null;
+  /** A rider's are always just orders. */
   permissions: SellerMemberPermission[];
   status: TeamMemberStatus;
   joinedAt?: string | null;
   inviteExpiresAt?: string | null;
   lastSeenAt?: string | null;
+}
+
+/** A team rider, as offered when an order goes out for self delivery. */
+export interface TeamRider {
+  id: string;
+  name: string;
+  phone?: string | null;
 }
 
 /** One kind of choice a product comes in, e.g. Size: S, M, L. */
