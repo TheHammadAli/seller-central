@@ -15,6 +15,7 @@ import {
   Settings,
   Store,
   Truck,
+  Users,
   Wallet,
 } from 'lucide-react-native';
 import { ChevronForward } from '../../components/Chevrons';
@@ -30,7 +31,7 @@ import { FEATURES } from '../../config';
 
 type Target = Exclude<
   keyof RootStackParamList,
-  'Login' | 'NoShop' | 'Tabs' | 'OrderDetail' | 'AssignRider' | 'CourierForm' | 'CampaignDetail' | 'VideoPlayer'
+  'Login' | 'NoShop' | 'Tabs' | 'OrderDetail' | 'AssignRider' | 'CourierForm' | 'CampaignDetail' | 'VideoPlayer' | 'TeamMemberForm'
 >;
 
 const GROUPS: { title: string; items: { label: string; hint: string; icon: LucideIcon; tone: Tone; to: Target }[] }[] = [
@@ -65,6 +66,7 @@ const GROUPS: { title: string; items: { label: string; hint: string; icon: Lucid
     title: t('Account'),
     items: [
       { label: t('Business Profile'), hint: t('Your shop page on Fazl'), icon: Store, tone: 'primary', to: 'BusinessProfile' },
+      { label: t('Team'), hint: t('People who help run your shops'), icon: Users, tone: 'info', to: 'Team' },
       { label: t('Notifications'), hint: t('Orders, stock and riders'), icon: Bell, tone: 'secondary', to: 'Notifications' },
       { label: t('Settings'), hint: t('Alerts, stock level, account'), icon: Settings, tone: 'neutral', to: 'Settings' },
     ],
@@ -81,7 +83,7 @@ export function MoreScreen() {
   const filteredGroups = GROUPS.map(group => ({
     ...group,
     items: group.items.filter(item => {
-      if (item.to === 'Earnings' || item.to === 'BusinessProfile') {
+      if (item.to === 'Earnings' || item.to === 'BusinessProfile' || item.to === 'Team') {
         return !member; // Owner only
       }
       if (item.to === 'Inventory' || item.to === 'Pricing') {

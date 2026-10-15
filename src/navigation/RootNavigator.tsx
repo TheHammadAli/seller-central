@@ -23,6 +23,8 @@ import { CreateShopScreen } from '../screens/shop/CreateShopScreen';
 import { ReturnsScreen } from '../screens/returns/ReturnsScreen';
 import { SettingsScreen } from '../screens/settings/SettingsScreen';
 import { ShippingScreen } from '../screens/shipping/ShippingScreen';
+import { TeamMemberFormScreen } from '../screens/team/TeamMemberFormScreen';
+import { TeamScreen } from '../screens/team/TeamScreen';
 import { useAuth } from '../state/AuthContext';
 import { colors } from '../theme';
 import { MainTabs } from './MainTabs';
@@ -83,6 +85,8 @@ export function RootNavigator() {
           <Stack.Screen name="BusinessProfile" component={BusinessProfileScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Team" component={TeamScreen} />
+          <Stack.Screen name="TeamMemberForm" component={TeamMemberFormScreen} />
         </>
       )}
     </Stack.Navigator>

@@ -258,16 +258,39 @@ export async function loginAsMember(
   password: string,
   onLastShop?: OnLastShop,
 ): Promise<Seller> {
-  const data = await api<{
-    accessToken: string;
-    refreshToken: string;
-    member: BackendMember;
-  }>('/seller/members/session/login', {
+  const data = await api<MemberSession>('/seller/members/session/login', {
     method: 'POST',
     body: { email, password },
     auth: false,
   });
+  return memberSignedIn(data, onLastShop);
+}
 
+/**
+ * Joins the owner's team with the 6-digit code from the invite email,
+ * choosing a password, and logs in as that team member.
+ */
+export async function joinTeamWithInvite(
+  email: string,
+  code: string,
+  password: string,
+  onLastShop?: OnLastShop,
+): Promise<Seller> {
+  const data = await api<MemberSession>('/seller/members/session/accept-invite', {
+    method: 'POST',
+    body: { email, code, password },
+    auth: false,
+  });
+  return memberSignedIn(data, onLastShop);
+}
+
+interface MemberSession {
+  accessToken: string;
+  refreshToken: string;
+  member: BackendMember;
+}
+
+async function memberSignedIn(data: MemberSession, onLastShop?: OnLastShop): Promise<Seller> {
   await saveTokens({
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,

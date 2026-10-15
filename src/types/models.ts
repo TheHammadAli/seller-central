@@ -50,6 +50,21 @@ export interface SellerMember {
   ownerId: string;
 }
 
+/** "invited" until they join with the emailed code; "expired" once it runs out. */
+export type TeamMemberStatus = 'invited' | 'expired' | 'active' | 'disabled';
+
+/** Someone on the owner's team, as the owner manages them (More > Team). */
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  permissions: SellerMemberPermission[];
+  status: TeamMemberStatus;
+  joinedAt?: string | null;
+  inviteExpiresAt?: string | null;
+  lastSeenAt?: string | null;
+}
+
 /** One kind of choice a product comes in, e.g. Size: S, M, L. */
 export interface VariationOption {
   name: string;

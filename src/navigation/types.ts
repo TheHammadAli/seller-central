@@ -1,6 +1,6 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { PostType } from '../types/models';
+import { PostType, TeamMember } from '../types/models';
 
 export type TabParamList = {
   Home: undefined;
@@ -44,6 +44,10 @@ export type RootStackParamList = {
   BusinessProfile: undefined;
   Notifications: undefined;
   Settings: undefined;
+  /** The owner's team (owner only). */
+  Team: undefined;
+  /** Inviting someone (no member), or changing an existing member. */
+  TeamMemberForm: { member?: TeamMember } | undefined;
 };
 
 export type RootScreenProps<T extends keyof RootStackParamList> =

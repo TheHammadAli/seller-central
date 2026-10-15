@@ -20,24 +20,45 @@ import { LANGUAGE_NAMES } from '../../utils/chooseLanguage';
 import { isUrdu, setLanguage, t } from '../../i18n';
 
 export function LoginScreen() {
-  const { signIn, signInAsMember, signInWithGoogle, signInWithApple } = useAuth();
+  const { signIn, signInAsMember, joinTeam, signInWithGoogle, signInWithApple } = useAuth();
   const [mode, setMode] = useState<'owner' | 'member'>('owner');
+  // A team member joining with the code from their invite email, choosing a password.
+  const [joining, setJoining] = useState(false);
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
+  const [confirm, setConfirm] = useState('');
+  const [errors, setErrors] = useState<{
+    email?: string;
+    code?: string;
+    password?: string;
+    confirm?: string;
+    form?: string;
+  }>({});
   const [loading, setLoading] = useState<'email' | 'google' | 'apple' | null>(null);
+  const codeRef = useRef<TextInputInstance>(null);
   const passwordRef = useRef<TextInputInstance>(null);
+  const confirmRef = useRef<TextInputInstance>(null);
+  const isJoining = mode === 'member' && joining;
 
   const submit = async () => {
     const next: typeof errors = {};
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) next.email = t('Enter a valid email');
-    if (!password) next.password = t('Enter your password');
+    if (isJoining) {
+      if (!/^\d{6}$/.test(code.trim())) next.code = t('Enter the 6-digit code from the invite email');
+      if (password.length < 6) next.password = t('Use at least 6 characters');
+      else if (confirm !== password) next.confirm = t("Passwords don't match");
+    } else if (!password) {
+      next.password = t('Enter your password');
+    }
     setErrors(next);
-    if (next.email || next.password) return;
+    if (Object.values(next).some(Boolean)) return;
 
     setLoading('email');
     try {
-      if (mode === 'member') {
+      if (isJoining) {
+        await joinTeam(email.trim(), code.trim(), password);
+      } else if (mode === 'member') {
         await signInAsMember(email.trim(), password);
       } else {
         await signIn(email.trim(), password);
@@ -96,6 +117,7 @@ export function LoginScreen() {
           style={[styles.segmentBtn, mode === 'owner' && styles.segmentBtnActive]}
           onPress={() => {
             setMode('owner');
+            setJoining(false);
             setErrors({});
           }}
           activeOpacity={0.8}
@@ -132,12 +154,18 @@ export function LoginScreen() {
       <View style={styles.brand}>
         <IconCircle icon={mode === 'member' ? Users : Store} size={72} />
         <AppText variant="title" align="center">
-          {mode === 'member' ? t('Team Member Login') : t('Fazl Seller Central')}
+          {isJoining
+            ? t('Join your team')
+            : mode === 'member'
+              ? t('Team Member Login')
+              : t('Fazl Seller Central')}
         </AppText>
         <AppText color={colors.textMuted} align="center">
-          {mode === 'member'
-            ? t('Sign in with your team credentials to manage assigned shop orders, products, and ads.')
-            : t("Manage your shop's products, orders and deliveries. Log in with your Fazl account.")}
+          {isJoining
+            ? t('Enter your email, the 6-digit code from your invite email, and choose a password.')
+            : mode === 'member'
+              ? t('Sign in with your team credentials to manage assigned shop orders, products, and ads.')
+              : t("Manage your shop's products, orders and deliveries. Log in with your Fazl account.")}
         </AppText>
       </View>
 
@@ -153,12 +181,30 @@ export function LoginScreen() {
         autoComplete="email"
         returnKeyType="next"
         submitBehavior="submit"
-        onSubmitEditing={() => passwordRef.current?.focus()}
+        onSubmitEditing={() => (isJoining ? codeRef : passwordRef).current?.focus()}
         error={errors.email}
       />
+      {isJoining ? (
+        <OutlinedField
+          ref={codeRef}
+          label={t('Invite code')}
+          value={code}
+          onChangeText={text => {
+            setCode(text.replace(/[^0-9]/g, ''));
+            setErrors(e => ({ ...e, code: undefined, form: undefined }));
+          }}
+          placeholder="123456"
+          keyboardType="number-pad"
+          maxLength={6}
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+          error={errors.code}
+        />
+      ) : null}
       <OutlinedField
         ref={passwordRef}
-        label={t('Password')}
+        label={isJoining ? t('Choose a password') : t('Password')}
         password
         value={password}
         onChangeText={text => {
@@ -166,25 +212,42 @@ export function LoginScreen() {
           setErrors(e => ({ ...e, password: undefined, form: undefined }));
         }}
         placeholder="•••••••••"
-        returnKeyType="done"
-        onSubmitEditing={submit}
+        returnKeyType={isJoining ? 'next' : 'done'}
+        submitBehavior={isJoining ? 'submit' : undefined}
+        onSubmitEditing={isJoining ? () => confirmRef.current?.focus() : submit}
         error={errors.password}
       />
-
-      <Pressable
-        style={styles.forgot}
-        hitSlop={8}
-        onPress={() =>
-          Alert.alert(
-            t('Forgot password'),
-            mode === 'member'
-              ? t('Ask your shop owner to update or reset your team credentials.')
-              : t('Reset your password from the Fazl app, then log in here with the new one.')
-          )
-        }
-      >
-        <AppText style={styles.forgotText}>{t('Forgot Password?')}</AppText>
-      </Pressable>
+      {isJoining ? (
+        <OutlinedField
+          ref={confirmRef}
+          label={t('Confirm password')}
+          password
+          value={confirm}
+          onChangeText={text => {
+            setConfirm(text);
+            setErrors(e => ({ ...e, confirm: undefined, form: undefined }));
+          }}
+          placeholder="•••••••••"
+          returnKeyType="done"
+          onSubmitEditing={submit}
+          error={errors.confirm}
+        />
+      ) : (
+        <Pressable
+          style={styles.forgot}
+          hitSlop={8}
+          onPress={() =>
+            Alert.alert(
+              t('Forgot password'),
+              mode === 'member'
+                ? t('Ask your shop owner to update or reset your team credentials.')
+                : t('Reset your password from the Fazl app, then log in here with the new one.')
+            )
+          }
+        >
+          <AppText style={styles.forgotText}>{t('Forgot Password?')}</AppText>
+        </Pressable>
+      )}
 
       {errors.form ? (
         <View style={styles.formError}>
@@ -196,12 +259,29 @@ export function LoginScreen() {
       ) : null}
 
       <DoodleButton
-        title={mode === 'member' ? t('Log in as Team Member') : t('Log in')}
+        title={isJoining ? t('Join team') : mode === 'member' ? t('Log in as Team Member') : t('Log in')}
         onPress={submit}
         loading={loading === 'email'}
-        loadingText={t('Logging in')}
-        disabled={loading !== null || !email.trim() || !password}
+        loadingText={isJoining ? t('Joining') : t('Logging in')}
+        disabled={loading !== null || !email.trim() || !password || (isJoining && (!code || !confirm))}
       />
+
+      {mode === 'member' ? (
+        <Pressable
+          style={styles.joinSwitch}
+          hitSlop={8}
+          onPress={() => {
+            setJoining(j => !j);
+            setPassword('');
+            setConfirm('');
+            setErrors({});
+          }}
+        >
+          <AppText style={styles.forgotText}>
+            {joining ? t('Already joined? Log in') : t('Got an invite code? Join your team')}
+          </AppText>
+        </Pressable>
+      ) : null}
 
       {mode === 'owner' ? (
         <>
@@ -298,6 +378,7 @@ const styles = themedStyles(() => StyleSheet.create({
   },
   brand: { alignItems: 'center', gap: spacing.md, marginBottom: spacing.xxl },
   forgot: { alignSelf: 'flex-end', marginTop: -4, marginBottom: spacing.xl },
+  joinSwitch: { alignSelf: 'center', marginTop: spacing.lg },
   forgotText: {
     fontFamily: fonts.regular,
     fontSize: 14,

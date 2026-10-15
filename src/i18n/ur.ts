@@ -743,6 +743,77 @@ const ur: Record<string, string> = {
   "This video couldn't be played.": 'یہ ویڈیو نہیں چل سکی۔',
   'Try Again': 'دوبارہ کوشش کریں',
   'Back to options': 'اختیارات پر واپس',
+
+  // Team members: logging in, and joining with an invite code.
+  'Shop Owner': 'دکان کا مالک',
+  'Team Member': 'ٹیم ممبر',
+  'Team Member Login': 'ٹیم ممبر لاگ ان',
+  'Log in as Team Member': 'ٹیم ممبر کے طور پر لاگ ان کریں',
+  'Ask your shop owner to update or reset your team credentials.':
+    'اپنا پاس ورڈ بدلوانے کے لیے دکان کے مالک سے کہیں۔',
+  'Sign in with your team credentials to manage assigned shop orders, products, and ads.':
+    'اپنی ٹیم والی ای میل اور پاس ورڈ سے لاگ ان کریں اور دکان کے آرڈرز، پروڈکٹس اور اشتہارات سنبھالیں۔',
+  'Team members only have access to Seller Central and the specific permissions granted by the shop owner.':
+    'ٹیم ممبرز صرف سیلر سینٹرل استعمال کر سکتے ہیں، اور صرف وہی کام جن کی دکان کے مالک نے اجازت دی ہو۔',
+  'Business profile': 'کاروباری پروفائل',
+  'Only the shop owner can edit the business profile.': 'کاروباری پروفائل صرف دکان کا مالک بدل سکتا ہے۔',
+  'Delivery charges (PKR)': 'ڈیلیوری چارجز (روپے)',
+  '0 for free delivery': 'مفت ڈیلیوری کے لیے 0',
+  'Join your team': 'اپنی ٹیم میں شامل ہوں',
+  'Enter your email, the 6-digit code from your invite email, and choose a password.':
+    'اپنی ای میل، دعوت والی ای میل میں آیا 6 ہندسوں کا کوڈ درج کریں اور ایک پاس ورڈ بنائیں۔',
+  'Invite code': 'دعوتی کوڈ',
+  'Choose a password': 'پاس ورڈ بنائیں',
+  'Confirm password': 'پاس ورڈ دوبارہ لکھیں',
+  'Enter the 6-digit code from the invite email': 'دعوت والی ای میل میں آیا 6 ہندسوں کا کوڈ درج کریں',
+  'Use at least 6 characters': 'کم از کم 6 حروف استعمال کریں',
+  "Passwords don't match": 'دونوں پاس ورڈ ایک جیسے نہیں',
+  'Join team': 'ٹیم میں شامل ہوں',
+  Joining: 'شامل ہو رہے ہیں',
+  'Already joined? Log in': 'پہلے سے شامل ہیں؟ لاگ ان کریں',
+  'Got an invite code? Join your team': 'دعوتی کوڈ ملا ہے؟ اپنی ٹیم میں شامل ہوں',
+
+  // The owner's team (More > Team).
+  Team: 'ٹیم',
+  'People who help run your shops': 'وہ لوگ جو آپ کی دکانیں چلانے میں مدد کرتے ہیں',
+  'Invite someone': 'کسی کو دعوت دیں',
+  'Posts & ads': 'پوسٹس اور اشتہارات',
+  'Invite sent': 'دعوت بھیج دی گئی',
+  'Invite expired': 'دعوت کی مدت ختم',
+  'Team members log in on the Team Member tab with their own email. They work on all your shops, only with what you allow. Earnings, the business profile and the team stay with you.':
+    'ٹیم ممبرز لاگ ان اسکرین پر "ٹیم ممبر" سے اپنی ای میل کے ساتھ لاگ ان کرتے ہیں۔ وہ آپ کی تمام دکانوں پر صرف وہی کام کرتے ہیں جن کی آپ اجازت دیں۔ کمائی، کاروباری پروفائل اور ٹیم صرف آپ کے پاس رہتے ہیں۔',
+  'No one on your team yet': 'ابھی آپ کی ٹیم میں کوئی نہیں',
+  'Invite people to help with orders, products or ads. We email them a code to join.':
+    'آرڈرز، پروڈکٹس یا اشتہارات میں مدد کے لیے لوگوں کو دعوت دیں۔ ہم انہیں شامل ہونے کا کوڈ ای میل کر دیتے ہیں۔',
+  'Orders, returns and delivery': 'آرڈرز، واپسیاں اور ڈیلیوری',
+  'Products, inventory and pricing': 'پروڈکٹس، اسٹاک اور قیمتیں',
+  'Videos and advertisement campaigns': 'ویڈیوز اور اشتہاری مہمات',
+  'We emailed {name} a code to join: {code}. It works for 7 days. You can also send it to them yourself.':
+    'ہم نے {name} کو شامل ہونے کا کوڈ ای میل کر دیا ہے: {code}۔ یہ 7 دن کام کرے گا۔ آپ یہ کوڈ خود بھی انہیں بھیج سکتے ہیں۔',
+  'Share code': 'کوڈ شیئر کریں',
+  'You are invited to my team on Fazl Seller Central. Your invite code is {code}. Open Seller Central, choose Team Member, tap "Got an invite code? Join your team" and use the email {email}.':
+    'آپ کو فضل سیلر سینٹرل پر میری ٹیم میں شامل ہونے کی دعوت ہے۔ آپ کا دعوتی کوڈ {code} ہے۔ سیلر سینٹرل کھولیں، "ٹیم ممبر" چنیں، "دعوتی کوڈ ملا ہے؟ اپنی ٹیم میں شامل ہوں" پر ٹیپ کریں اور یہ ای میل استعمال کریں: {email}',
+  'Choose at least one': 'کم از کم ایک چنیں',
+  'New invite sent': 'نئی دعوت بھیج دی گئی',
+  'Could not send': 'بھیجا نہیں جا سکا',
+  'Remove {name}?': '{name} کو ہٹا دیں؟',
+  "They won't be able to log in to Seller Central any more.": 'وہ اب سیلر سینٹرل میں لاگ ان نہیں کر سکیں گے۔',
+  'Could not remove': 'ہٹایا نہیں جا سکا',
+  'Team member': 'ٹیم ممبر',
+  'Invite to team': 'ٹیم میں دعوت دیں',
+  'Send invite': 'دعوت بھیجیں',
+  Sending: 'بھیجا جا رہا ہے',
+  Email: 'ای میل',
+  'We email them a 6-digit code to join with.': 'ہم انہیں شامل ہونے کے لیے 6 ہندسوں کا کوڈ ای میل کریں گے۔',
+  'What they can do': 'وہ کیا کر سکتے ہیں',
+  'Pause access': 'رسائی روکیں',
+  "While paused they can't log in. Turn it off to let them back in.":
+    'رسائی رکی ہو تو وہ لاگ ان نہیں کر سکتے۔ دوبارہ اجازت دینے کے لیے اسے بند کریں۔',
+  'Send invite again': 'دعوت دوبارہ بھیجیں',
+  'Remove from team': 'ٹیم سے ہٹائیں',
+  Removing: 'ہٹایا جا رہا ہے',
+  'They log in to Seller Central only, on all your shops. Earnings, the business profile and the team stay with you.':
+    'وہ صرف سیلر سینٹرل میں، آپ کی تمام دکانوں پر لاگ ان کرتے ہیں۔ کمائی، کاروباری پروفائل اور ٹیم صرف آپ کے پاس رہتے ہیں۔',
 };
 
 export default ur;
