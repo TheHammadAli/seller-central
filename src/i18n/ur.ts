@@ -836,6 +836,142 @@ const ur: Record<string, string> = {
 
   'They log in to Seller Central only, on all your shops. Earnings, the business profile and the team stay with you.':
     'وہ صرف سیلر سینٹرل میں، آپ کی تمام دکانوں پر لاگ ان کرتے ہیں۔ کمائی، کاروباری پروفائل اور ٹیم صرف آپ کے پاس رہتے ہیں۔',
+
+  // Earnings > Withdraw: the wallet balance, payout accounts and requests.
+  'Withdraw earnings': 'کمائی نکالیں',
+  Withdraw: 'رقم نکالیں',
+  'Available to withdraw': 'نکالنے کے لیے دستیاب',
+  'Available to withdraw: {amount}': 'نکالنے کے لیے دستیاب: {amount}',
+  '{amount} already requested': '{amount} کی درخواست پہلے ہی دی جا چکی ہے',
+  'Withdrawn so far: {amount}': 'اب تک نکالی گئی رقم: {amount}',
+  'Fazl has paused your wallet. Contact Fazl support for help.':
+    'فضل نے آپ کا والٹ روک دیا ہے۔ مدد کے لیے فضل سپورٹ سے رابطہ کریں۔',
+  'Withdrawals are paused for now. Please try again later.':
+    'رقم نکالنا ابھی بند ہے۔ براہ کرم بعد میں کوشش کریں۔',
+  'You can withdraw once you have at least {amount}.':
+    'کم از کم {amount} ہونے پر آپ رقم نکال سکتے ہیں۔',
+  'Add an account first': 'پہلے اکاؤنٹ شامل کریں',
+  'Add the bank, JazzCash or Easypaisa account to send the money to.':
+    'وہ بینک، جاز کیش یا ایزی پیسہ اکاؤنٹ شامل کریں جس میں رقم بھیجی جائے۔',
+  'Add account': 'اکاؤنٹ شامل کریں',
+  'Your accounts': 'آپ کے اکاؤنٹس',
+  'No accounts yet': 'ابھی کوئی اکاؤنٹ نہیں',
+  'Add the bank, JazzCash or Easypaisa account your money is sent to.':
+    'وہ بینک، جاز کیش یا ایزی پیسہ اکاؤنٹ شامل کریں جس میں آپ کی رقم بھیجی جائے۔',
+  'Bank account': 'بینک اکاؤنٹ',
+  Default: 'ڈیفالٹ',
+  'Make default': 'ڈیفالٹ بنائیں',
+  Withdrawals: 'نکالی گئی رقوم',
+  'Your requests show up here.': 'آپ کی درخواستیں یہاں نظر آئیں گی۔',
+  Requested: 'درخواست دی گئی',
+  Approved: 'منظور',
+  'Being sent': 'بھیجی جا رہی ہے',
+  Paid: 'ادا ہو گئی',
+  Rejected: 'مسترد',
+  'Cancel this request?': 'یہ درخواست منسوخ کریں؟',
+  'The amount stays in your wallet.': 'رقم آپ کے والٹ میں رہے گی۔',
+  'Keep it': 'رہنے دیں',
+  'Cancel request': 'درخواست منسوخ کریں',
+  'Could not cancel': 'منسوخ نہیں ہو سکی',
+  "Fazl's team checks each request and sends the money to the account you chose. Cash on delivery money is already with you, so it isn't part of this balance.":
+    'فضل کی ٹیم ہر درخواست دیکھتی ہے اور رقم آپ کے چنے ہوئے اکاؤنٹ میں بھیجتی ہے۔ کیش آن ڈیلیوری کی رقم پہلے ہی آپ کے پاس ہوتی ہے، اس لیے وہ اس بیلنس میں شامل نہیں۔',
+  'The smallest withdrawal is {amount}.': 'کم از کم {amount} نکالے جا سکتے ہیں۔',
+  'You can withdraw up to {amount}.': 'آپ زیادہ سے زیادہ {amount} نکال سکتے ہیں۔',
+  'Withdrawal requested': 'درخواست بھیج دی گئی',
+  "Fazl's team will send {amount} to your account. You can follow it under Withdrawals.":
+    'فضل کی ٹیم {amount} آپ کے اکاؤنٹ میں بھیجے گی۔ آپ اسے "نکالی گئی رقوم" میں دیکھ سکتے ہیں۔',
+  OK: 'ٹھیک ہے',
+  'Could not request': 'درخواست نہیں بھیجی جا سکی',
+  'Request withdrawal': 'رقم نکالنے کی درخواست دیں',
+  Amount: 'رقم',
+  'Withdraw all ({amount})': 'سب نکالیں ({amount})',
+  'Send to': 'کہاں بھیجیں',
+  'Save account': 'اکاؤنٹ محفوظ کریں',
+  Bank: 'بینک',
+  'Account title': 'اکاؤنٹ کا نام',
+  'The name the account is in': 'جس نام پر اکاؤنٹ ہے',
+  'Bank name': 'بینک کا نام',
+  'e.g. Meezan Bank': 'مثلاً میزان بینک',
+  'Account number': 'اکاؤنٹ نمبر',
+  'Enter the account number': 'اکاؤنٹ نمبر درج کریں',
+  'IBAN (optional)': 'IBAN (اختیاری)',
+  '{name} mobile number': '{name} موبائل نمبر',
+  'Enter the 11-digit mobile number, e.g. 03001234567': '11 ہندسوں کا موبائل نمبر درج کریں، مثلاً 03001234567',
+  'Make this my default': 'اسے ڈیفالٹ بنائیں',
+  'Offered first when you withdraw': 'رقم نکالتے وقت یہی پہلے چنا ہوگا',
+  'Check the details: Fazl sends your money to exactly this account. The account should be in your own name.':
+    'تفصیلات چیک کر لیں: فضل آپ کی رقم بالکل اسی اکاؤنٹ میں بھیجے گا۔ اکاؤنٹ آپ کے اپنے نام پر ہونا چاہیے۔',
+
+  // Another shop: its fee, Fazl's approval, and adding coins to pay for it.
+  'Shop limit reached': 'دکانوں کی حد پوری ہو گئی',
+  'You can have up to {count} shops on Fazl, counting ones waiting for approval.':
+    'فضل پر آپ کی زیادہ سے زیادہ {count} دکانیں ہو سکتی ہیں، منظوری کی منتظر دکانوں سمیت۔',
+  'Not enough coins': 'کوائنز کم ہیں',
+  'Another shop costs {fee}, and your Fazl wallet has {balance}. Add coins first.':
+    'ایک اور دکان کی فیس {fee} ہے، اور آپ کے فضل والٹ میں {balance} ہیں۔ پہلے کوائنز شامل کریں۔',
+  'Pay {amount}?': '{amount} ادا کریں؟',
+  "It's taken from your Fazl wallet now. If Fazl doesn't approve the shop, it goes back to your wallet.":
+    'یہ رقم ابھی آپ کے فضل والٹ سے کٹے گی۔ اگر فضل نے دکان منظور نہ کی تو یہ آپ کے والٹ میں واپس آ جائے گی۔',
+  'Pay & send': 'ادا کریں اور بھیجیں',
+  'Sent for approval': 'منظوری کے لیے بھیج دی گئی',
+  "Fazl will check {name} and let you know. Once it's approved it opens on Fazl and shows in your shops.":
+    'فضل {name} کو دیکھ کر آپ کو بتائے گا۔ منظوری کے بعد یہ فضل پر کھل جائے گی اور آپ کی دکانوں میں نظر آئے گی۔',
+  'Pay {amount} & send for approval': '{amount} ادا کریں اور منظوری کے لیے بھیجیں',
+  'Send for approval': 'منظوری کے لیے بھیجیں',
+  "Another shop needs Fazl's approval": 'ایک اور دکان کے لیے فضل کی منظوری ضروری ہے',
+  "Your first shop is free. This one costs {fee}, paid from your Fazl wallet; if Fazl doesn't approve it, the money comes back.":
+    'آپ کی پہلی دکان مفت ہے۔ اس کی فیس {fee} ہے جو آپ کے فضل والٹ سے ادا ہو گی؛ اگر فضل نے اسے منظور نہ کیا تو رقم واپس آ جائے گی۔',
+  'Your first shop is free. Fazl checks each further shop before it opens.':
+    'آپ کی پہلی دکان مفت ہے۔ ہر اگلی دکان کھلنے سے پہلے فضل اسے دیکھتا ہے۔',
+  'Your Fazl wallet: {amount}': 'آپ کا فضل والٹ: {amount}',
+  '{amount} short': '{amount} کم',
+  'Once Fazl approves it, customers see it on Fazl and you can list products in it from here.':
+    'فضل کی منظوری کے بعد گاہک اسے فضل پر دیکھیں گے اور آپ یہاں سے اس میں مصنوعات لسٹ کر سکیں گے۔',
+  '{name} is removed and {amount} goes back to your Fazl wallet.':
+    '{name} ہٹا دی جائے گی اور {amount} آپ کے فضل والٹ میں واپس آ جائیں گے۔',
+  '{name} is removed.': '{name} ہٹا دی جائے گی۔',
+  'Waiting for approval': 'منظوری کا انتظار',
+  'Not approved': 'منظور نہیں ہوئی',
+  'Sent {time} · {amount} paid': '{time} بھیجی گئی · {amount} ادا کیے',
+  'Sent {time}': '{time} بھیجی گئی',
+  '{amount} is back in your wallet': '{amount} آپ کے والٹ میں واپس آ گئے',
+  'Your shop is approved': 'آپ کی دکان منظور ہو گئی',
+  "Your shop request wasn't approved": 'آپ کی دکان کی درخواست منظور نہیں ہوئی',
+  'Add coins': 'کوائنز شامل کریں',
+  'Coins added': 'کوائنز شامل ہو گئے',
+  '{amount} is now in your Fazl wallet.': '{amount} اب آپ کے فضل والٹ میں ہیں۔',
+  'The payment did not go through': 'ادائیگی نہیں ہو سکی',
+  'You were not charged.': 'آپ سے کوئی رقم نہیں کٹی۔',
+  'Enter an amount from {min} to {max}.': '{min} سے {max} تک رقم درج کریں۔',
+  'Enter the last 6 digits of the CNIC on the JazzCash account.':
+    'جاز کیش اکاؤنٹ والے شناختی کارڈ کے آخری 6 ہندسے درج کریں۔',
+  'Approve the payment on your phone': 'اپنے فون پر ادائیگی کی منظوری دیں',
+  'Finish paying on the card page': 'کارڈ والے صفحے پر ادائیگی مکمل کریں',
+  'Waiting for the payment to be confirmed': 'ادائیگی کی تصدیق کا انتظار ہے',
+  '{name} has sent a request to {number}. Enter your MPIN there to pay {amount}.':
+    '{name} نے {number} پر درخواست بھیجی ہے۔ {amount} ادا کرنے کے لیے وہاں اپنا MPIN درج کریں۔',
+  'Pay {amount} in the browser, then come back here. Your coins are added once JazzCash confirms it.':
+    'براؤزر میں {amount} ادا کریں، پھر یہاں واپس آئیں۔ جاز کیش کی تصدیق کے بعد آپ کے کوائنز شامل ہو جائیں گے۔',
+  'This can take a minute. You can leave this screen; the coins are added either way.':
+    'اس میں ایک منٹ لگ سکتا ہے۔ آپ یہ اسکرین چھوڑ سکتے ہیں؛ کوائنز ہر حال میں شامل ہو جائیں گے۔',
+  'Open the card page again': 'کارڈ والا صفحہ دوبارہ کھولیں',
+  "I've paid, check now": 'میں نے ادائیگی کر دی، ابھی چیک کریں',
+  'Pay {amount}': '{amount} ادا کریں',
+  Pay: 'ادا کریں',
+  'Coins go into your Fazl wallet: 1 coin = Rs 1. Fazl takes the fee for another shop from them.':
+    'کوائنز آپ کے فضل والٹ میں جاتے ہیں: 1 کوائن = Rs 1۔ فضل ایک اور دکان کی فیس انہی سے لیتا ہے۔',
+  'Buying coins is paused for now. Please try again later.':
+    'کوائنز خریدنا ابھی بند ہے۔ براہ کرم بعد میں کوشش کریں۔',
+  'You need {amount} more for your new shop.': 'آپ کی نئی دکان کے لیے {amount} مزید چاہئیں۔',
+  'From {min} to {max}': '{min} سے {max} تک',
+  'Pay with': 'ادائیگی کا طریقہ',
+  'Pay from your JazzCash account': 'اپنے جاز کیش اکاؤنٹ سے ادا کریں',
+  'Pay from your Easypaisa account': 'اپنے ایزی پیسہ اکاؤنٹ سے ادا کریں',
+  'Debit or credit card': 'ڈیبٹ یا کریڈٹ کارڈ',
+  'Opens a secure card page': 'ایک محفوظ کارڈ والا صفحہ کھلتا ہے',
+  'Not available yet': 'ابھی دستیاب نہیں',
+  'Last 6 digits of CNIC': 'شناختی کارڈ کے آخری 6 ہندسے',
+  'Of the CNIC the JazzCash account is registered on': 'جس شناختی کارڈ پر جاز کیش اکاؤنٹ رجسٹرڈ ہے',
 };
 
 export default ur;

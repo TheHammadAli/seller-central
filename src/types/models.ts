@@ -279,6 +279,8 @@ export interface AppNotification {
   read: boolean;
   orderId?: string;
   productId?: string;
+  /** Fazl's answer to a request for another shop: opens the shop list. */
+  shopRequest?: boolean;
 }
 
 export interface SellerSettings {

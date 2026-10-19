@@ -23,6 +23,8 @@ export type RootStackParamList = {
   ChooseShop: undefined;
   /** Creating a shop on Fazl: for an account with none, or another one. */
   CreateShop: undefined;
+  /** Coins into the owner's Fazl wallet, e.g. for another shop's fee (`needed`, rupees). */
+  AddCoins: { needed?: number } | undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   OrderDetail: { orderId: string };
   AssignRider: { orderId: string };
@@ -40,6 +42,10 @@ export type RootStackParamList = {
   CampaignDetail: { campaignId: string };
   Pricing: undefined;
   Earnings: undefined;
+  /** Earnings > Withdraw: the balance, accounts and requests (owner only). */
+  Payouts: undefined;
+  Withdraw: undefined;
+  PayoutAccountForm: undefined;
   LocalDelivery: undefined;
   Shipping: undefined;
   Returns: undefined;

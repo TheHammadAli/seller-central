@@ -1,9 +1,12 @@
-import { Camera, Info, MapPin, Store } from 'lucide-react-native';
+import { BadgeCheck, Camera, Info, MapPin, Store } from 'lucide-react-native';
 import { ChevronForward } from '../../components/Chevrons';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Asset, launchImageLibrary } from 'react-native-image-picker';
+import { ApiError } from '../../api/http';
 import { ShopCategory, UploadFile } from '../../api/shopContent';
+import { getNewShopTerms, NewShopTerms } from '../../api/shopRequests';
 import {
   createShop,
   LatLng,
@@ -14,7 +17,8 @@ import {
   searchAreas,
   shopTypeCategories,
 } from '../../api/shopSetup';
-import { AppText, Button, Header, Screen, TextField } from '../../components';
+import { AppText, Button, Card, Header, IconCircle, Screen, TextField } from '../../components';
+import { formatRs } from '../../utils/format';
 import { RootScreenProps } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
 import { colors, fonts, radius, spacing, themedStyles } from '../../theme';
@@ -46,6 +50,10 @@ export const asUpload = (a: Asset): UploadFile => ({
  * Its place on the map is the Store Pin location when one is dropped (which
  * also fills City and Area), else its area's point when the area list knows
  * it, else its city's — where the Fazl app puts a shop without a pin.
+ *
+ * The account's first shop is free and opens at once. Any further one costs
+ * the fee Fazl sets, paid from the owner's Fazl wallet (Add coins tops it
+ * up), and waits for Fazl's approval; the shop list shows it meanwhile.
  */
 export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) {
   const { seller, shopCreated } = useAuth();
@@ -70,6 +78,18 @@ export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) 
   const [loadingCities, setLoadingCities] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [picking, setPicking] = useState<'category' | 'city' | 'area' | 'map' | null>(null);
+  // What another shop takes (fee, wallet, limit). Read again on coming back
+  // from Add coins. Without it the backend still decides.
+  const [terms, setTerms] = useState<NewShopTerms | null>(null);
+
+  const loadTerms = useCallback(() => {
+    getNewShopTerms().then(setTerms).catch(() => undefined);
+  }, []);
+  useFocusEffect(loadTerms);
+
+  const extra = !!terms?.needsApproval;
+  const fee = terms?.fee ?? 0;
+  const short = extra ? Math.max(0, fee - (terms?.balance ?? 0)) : 0;
 
   // On to Home once the new shop is open. This screen is part of every stage
   // of the app (no shop yet, choosing one, managing one), so it doesn't go
@@ -155,11 +175,44 @@ export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) 
     return next;
   };
 
-  const save = async () => {
+  const save = () => {
     const found = validate();
     setErrors(found);
-    if (Object.keys(found).length || !city || !area || !category) return;
+    if (Object.keys(found).length) return;
+    if (terms && !terms.canCreate) {
+      Alert.alert(t('Shop limit reached'), t('You can have up to {count} shops on Fazl, counting ones waiting for approval.', { count: terms.maxShops }));
+      return;
+    }
+    if (extra && short > 0) {
+      Alert.alert(
+        t('Not enough coins'),
+        t('Another shop costs {fee}, and your Fazl wallet has {balance}. Add coins first.', {
+          fee: formatRs(fee),
+          balance: formatRs(terms?.balance ?? 0),
+        }),
+        [
+          { text: t('Cancel'), style: 'cancel' },
+          { text: t('Add coins'), onPress: () => navigation.navigate('AddCoins', { needed: short }) },
+        ],
+      );
+      return;
+    }
+    if (extra && fee > 0) {
+      Alert.alert(
+        t('Pay {amount}?', { amount: formatRs(fee) }),
+        t("It's taken from your Fazl wallet now. If Fazl doesn't approve the shop, it goes back to your wallet."),
+        [
+          { text: t('Cancel'), style: 'cancel' },
+          { text: t('Pay & send'), onPress: () => submit() },
+        ],
+      );
+      return;
+    }
+    submit();
+  };
 
+  const submit = async () => {
+    if (!city || !area || !category) return;
     setSaving(true);
     let shopId: string;
     try {
@@ -174,20 +227,38 @@ export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) 
         setSaving(false);
         return;
       }
-      shopId = await createShop({
-        title: name.trim(),
-        description: description.trim(),
-        categoryId: category.id,
-        marketName: marketName.trim(),
-        contact: contact.trim(),
-        city: city.name,
-        area: area.name,
-        at,
-        address: pinned?.address,
-        logo: logo ?? undefined,
-        banner: banner ?? undefined,
-      });
+      const created = await createShop(
+        {
+          title: name.trim(),
+          description: description.trim(),
+          categoryId: category.id,
+          marketName: marketName.trim(),
+          contact: contact.trim(),
+          city: city.name,
+          area: area.name,
+          at,
+          address: pinned?.address,
+          logo: logo ?? undefined,
+          banner: banner ?? undefined,
+        },
+        extra ? terms?.feeMinor : undefined,
+      );
+      if (created.awaitingApproval) {
+        // Not a shop to manage yet: it shows in the shop list as waiting.
+        Alert.alert(
+          t('Sent for approval'),
+          t("Fazl will check {name} and let you know. Once it's approved it opens on Fazl and shows in your shops.", {
+            name: name.trim(),
+          }),
+          [{ text: t('OK'), onPress: () => navigation.goBack() }],
+          { cancelable: false },
+        );
+        return;
+      }
+      shopId = created.id;
     } catch (e) {
+      // The fee changed meanwhile (409): show the new one before trying again.
+      if (e instanceof ApiError && e.status === 409) loadTerms();
       Alert.alert(t('Failed to create shop'), e instanceof Error ? e.message : '');
       setSaving(false);
       return;
@@ -213,8 +284,58 @@ export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) 
   return (
     <Screen
       header={<Header title={t('Create a shop')} />}
-      footer={<Button title={t('Create shop')} flex loading={saving} loadingText={t('Creating')} disabled={saving} onPress={save} />}
+      footer={
+        <Button
+          title={
+            !extra
+              ? t('Create shop')
+              : fee > 0
+                ? t('Pay {amount} & send for approval', { amount: formatRs(fee) })
+                : t('Send for approval')
+          }
+          flex
+          loading={saving}
+          loadingText={extra ? t('Sending') : t('Creating')}
+          disabled={saving || terms?.canCreate === false}
+          onPress={save}
+        />
+      }
     >
+      {extra && terms ? (
+        <Card style={styles.terms}>
+          <View style={styles.termsHead}>
+            <IconCircle icon={BadgeCheck} tone="primary" size={40} />
+            <View style={styles.flex}>
+              <AppText variant="bodyBold">{t('Another shop needs Fazl\'s approval')}</AppText>
+              <AppText variant="caption" color={colors.textMuted}>
+                {fee > 0
+                  ? t('Your first shop is free. This one costs {fee}, paid from your Fazl wallet; if Fazl doesn\'t approve it, the money comes back.', {
+                      fee: formatRs(fee),
+                    })
+                  : t('Your first shop is free. Fazl checks each further shop before it opens.')}
+              </AppText>
+            </View>
+          </View>
+          {!terms.canCreate ? (
+            <AppText variant="label" color={colors.danger}>
+              {t('You can have up to {count} shops on Fazl, counting ones waiting for approval.', { count: terms.maxShops })}
+            </AppText>
+          ) : fee > 0 ? (
+            <View style={styles.walletRow}>
+              <AppText variant="label" color={short > 0 ? colors.danger : colors.textMuted} style={styles.flex}>
+                {t('Your Fazl wallet: {amount}', { amount: formatRs(terms.balance) })}
+                {short > 0 ? ` · ${t('{amount} short', { amount: formatRs(short) })}` : ''}
+              </AppText>
+              <Pressable onPress={() => navigation.navigate('AddCoins', short > 0 ? { needed: short } : undefined)} hitSlop={8}>
+                <AppText variant="label" color={colors.primary}>
+                  {t('Add coins')}
+                </AppText>
+              </Pressable>
+            </View>
+          ) : null}
+        </Card>
+      ) : null}
+
       <AppText variant="subheading">{t('Add your shop details')}</AppText>
       <AppText color={colors.textMuted} style={styles.intro}>
         {t('Please fill the details to create a shop.')}
@@ -333,7 +454,9 @@ export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) 
       <View style={styles.note}>
         <Info size={16} color={colors.textMuted} />
         <AppText variant="caption" color={colors.textMuted} style={styles.flex}>
-          {t('Your shop is created on Fazl, so customers see it there too. You can then list products in it from here.')}
+          {extra
+            ? t('Once Fazl approves it, customers see it on Fazl and you can list products in it from here.')
+            : t('Your shop is created on Fazl, so customers see it there too. You can then list products in it from here.')}
         </AppText>
       </View>
 
@@ -427,6 +550,9 @@ export function PickerField({
 const styles = themedStyles(() => StyleSheet.create({
   flex: { flex: 1 },
   intro: { marginTop: spacing.xs, marginBottom: spacing.lg },
+  terms: { gap: spacing.md, marginBottom: spacing.lg },
+  termsHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  walletRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   label: { marginBottom: spacing.sm },
   banner: {
     height: 140,
