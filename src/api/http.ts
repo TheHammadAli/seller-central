@@ -86,6 +86,8 @@ async function send(path: string, { method = 'GET', body, form, timeoutMs }: Req
     Accept: 'application/json',
     // The backend answers its messages (and category names) in the app's language.
     'Accept-Language': language,
+    // Tells Fazl the request is Seller Central's: what it lists is retail.
+    'X-Fazl-Client': 'seller-central',
   };
   // Multipart sets its own Content-Type (with the boundary).
   if (body !== undefined && !form) headers['Content-Type'] = 'application/json';
