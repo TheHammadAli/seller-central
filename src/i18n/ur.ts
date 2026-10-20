@@ -981,6 +981,16 @@ const ur: Record<string, string> = {
   "Your new shop's fee": 'آپ کی نئی دکان کی فیس',
   'The smallest payment is {min}. What is left after the fee stays in your Fazl wallet.':
     'کم از کم ادائیگی {min} ہے۔ فیس کے بعد باقی رقم آپ کے فضل والٹ میں رہے گی۔',
+  // The payment page for another shop's fee, and paying by card inside the app.
+  'Fee for this shop': 'اس دکان کی فیس',
+  'Fill in the details, then choose how to pay.': 'تفصیلات درج کریں، پھر ادائیگی کا طریقہ منتخب کریں۔',
+  'Amount to pay': 'ادا کرنے کی رقم',
+  'Pay {amount} from wallet': 'والٹ سے {amount} ادا کریں',
+  'Not available right now': 'ابھی دستیاب نہیں',
+  "Enter your card's details on JazzCash's secure page": 'جاز کیش کے محفوظ صفحے پر اپنے کارڈ کی تفصیلات درج کریں',
+  'Card payment': 'کارڈ سے ادائیگی',
+  "Enter your card's details on the card page to pay {amount}. This moves on once JazzCash confirms it.":
+    '{amount} ادا کرنے کے لیے کارڈ والے صفحے پر اپنے کارڈ کی تفصیلات درج کریں۔ جاز کیش کی تصدیق کے بعد یہ آگے بڑھ جائے گا۔',
 };
 
 export default ur;

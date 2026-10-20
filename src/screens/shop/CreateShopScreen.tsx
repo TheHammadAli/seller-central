@@ -1,21 +1,9 @@
-import {
-  BadgeCheck,
-  Camera,
-  Check,
-  CreditCard,
-  Info,
-  LucideIcon,
-  MapPin,
-  Smartphone,
-  Store,
-  Wallet,
-} from 'lucide-react-native';
+import { BadgeCheck, Camera, Info, MapPin, Store } from 'lucide-react-native';
 import { ChevronForward } from '../../components/Chevrons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Asset, launchImageLibrary } from 'react-native-image-picker';
-import { CoinMethod, CoinOptions, getCoinOptions } from '../../api/coins';
 import { ApiError } from '../../api/http';
 import { ShopCategory, UploadFile } from '../../api/shopContent';
 import { getNewShopTerms, NewShopTerms } from '../../api/shopRequests';
@@ -37,11 +25,7 @@ import { colors, fonts, radius, spacing, themedStyles } from '../../theme';
 import { CategoryPickerModal } from '../products/CategoryPickerModal';
 import { MapPickerModal, PinnedPlace } from './MapPickerModal';
 import { PlacePickerModal } from './PlacePickerModal';
-import { TOP_UP_METHODS } from '../wallet/AddCoinsScreen';
 import { t } from '../../i18n';
-
-/** How another shop's fee is paid: from the Fazl wallet, or with one of the gateways now. */
-type PayWith = 'wallet' | CoinMethod;
 
 type Field = 'name' | 'description' | 'category' | 'marketName' | 'contact' | 'city' | 'area' | 'location';
 type Errors = Partial<Record<Field, string>>;
@@ -69,10 +53,10 @@ export const asUpload = (a: Asset): UploadFile => ({
  *
  * The account's first shop is free and opens at once. Any further one costs
  * the fee Fazl sets and waits for Fazl's approval; the shop list shows it
- * meanwhile. The fee is paid from the owner's Fazl wallet, or with JazzCash,
- * Easypaisa or a card right then: that payment goes into the wallet (Add
- * money, for the whole fee) and comes back here as `paidFor`, and the shop is
- * then sent on, paid from it.
+ * meanwhile. Its "Pay & send for approval" opens the payment page (AddCoins
+ * with `shopFee`): the Fazl wallet, JazzCash, Easypaisa or a card. Once it's
+ * paid, that page comes back here (`fromWalletAt` / `paidFor`) and the shop
+ * is sent for approval, the fee taken from the wallet.
  */
 export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateShop'>) {
   const { seller, shopCreated } = useAuth();
@@ -108,23 +92,11 @@ export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateS
 
   const extra = !!terms?.needsApproval;
   const fee = terms?.fee ?? 0;
-  const short = extra ? Math.max(0, fee - (terms?.balance ?? 0)) : 0;
 
-  // Which gateways can take the fee now (JazzCash, Easypaisa, card).
-  const [gateways, setGateways] = useState<CoinOptions | null>(null);
-  useEffect(() => {
-    getCoinOptions().then(setGateways).catch(() => undefined);
-  }, []);
-  const canUse = (method: CoinMethod) => !!gateways?.enabled && !!gateways.available[method];
-  // The owner's choice; until then the wallet, or a gateway when it's short.
-  const [payWith, setPayWith] = useState<PayWith | null>(null);
-  const firstGateway = TOP_UP_METHODS.find(m => canUse(m.method))?.method;
-  const chosenPay: PayWith = payWith ?? (short > 0 && firstGateway ? firstGateway : 'wallet');
-  const chosenGateway = TOP_UP_METHODS.find(m => m.method === chosenPay);
-
-  // Back from paying the whole fee with a gateway: the money is in the wallet
-  // now, so the shop goes for approval, paid from it. (Once per payment.)
+  // Back from the payment page, paid: the shop goes for approval, its fee
+  // taken from the wallet (a gateway payment went into it). Once per payment.
   const paidFor = route.params?.paidFor;
+  const fromWalletAt = route.params?.fromWalletAt;
   const handledPayment = useRef<string | null>(null);
 
   // On to Home once the new shop is open. This screen is part of every stage
@@ -219,35 +191,10 @@ export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateS
       Alert.alert(t('Shop limit reached'), t('You can have up to {count} shops on Fazl, counting ones waiting for approval.', { count: terms.maxShops }));
       return;
     }
-    // Paying with JazzCash, Easypaisa or a card: the whole fee, on Add money;
-    // it comes back here as `paidFor` and the shop is sent on then.
-    if (extra && fee > 0 && chosenPay !== 'wallet') {
-      navigation.navigate('AddCoins', { shopFee: fee, method: chosenPay });
-      return;
-    }
-    if (extra && short > 0) {
-      Alert.alert(
-        t('Not enough money'),
-        t('Another shop costs {fee}, and your Fazl wallet has {balance}. Add money first, or pay with JazzCash, Easypaisa or a card.', {
-          fee: formatRs(fee),
-          balance: formatRs(terms?.balance ?? 0),
-        }),
-        [
-          { text: t('Cancel'), style: 'cancel' },
-          { text: t('Add money'), onPress: () => navigation.navigate('AddCoins', { needed: short }) },
-        ],
-      );
-      return;
-    }
+    // Another shop's fee: the payment page (wallet, JazzCash, Easypaisa or
+    // card). It comes back here once paid, and the shop is sent then.
     if (extra && fee > 0) {
-      Alert.alert(
-        t('Pay {amount}?', { amount: formatRs(fee) }),
-        t("It's taken from your Fazl wallet now. If Fazl doesn't approve the shop, it goes back to your wallet."),
-        [
-          { text: t('Cancel'), style: 'cancel' },
-          { text: t('Pay & send'), onPress: () => submit() },
-        ],
-      );
+      navigation.navigate('AddCoins', { shopFee: fee });
       return;
     }
     submit();
@@ -324,13 +271,12 @@ export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateS
   };
 
   useEffect(() => {
-    if (!paidFor || handledPayment.current === paidFor) return;
-    handledPayment.current = paidFor;
-    // The fee is in the wallet now; a retry (say the fee changed) pays from it.
-    setPayWith('wallet');
+    const payment = paidFor ?? (fromWalletAt ? `wallet-${fromWalletAt}` : null);
+    if (!payment || handledPayment.current === payment) return;
+    handledPayment.current = payment;
     submit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paidFor]);
+  }, [paidFor, fromWalletAt]);
 
   return (
     <Screen
@@ -340,11 +286,9 @@ export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateS
           title={
             !extra
               ? t('Create shop')
-              : fee <= 0
-                ? t('Send for approval')
-                : chosenGateway
-                  ? t('Pay {amount} with {method}', { amount: formatRs(fee), method: chosenGateway.label })
-                  : t('Pay {amount} & send for approval', { amount: formatRs(fee) })
+              : fee > 0
+                ? t('Pay {amount} & send for approval', { amount: formatRs(fee) })
+                : t('Send for approval')
           }
           flex
           loading={saving}
@@ -374,47 +318,16 @@ export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateS
               {t('You can have up to {count} shops on Fazl, counting ones waiting for approval.', { count: terms.maxShops })}
             </AppText>
           ) : fee > 0 ? (
-            <View>
-              <AppText variant="label" style={styles.payTitle}>
-                {t('Pay with')}
-              </AppText>
-              <View style={styles.payList}>
-                <PayOption
-                  icon={Wallet}
-                  label={t('Fazl wallet')}
-                  hint={
-                    short > 0
-                      ? `${t('Balance {amount}', { amount: formatRs(terms.balance) })} · ${t('{amount} short', {
-                          amount: formatRs(short),
-                        })}`
-                      : t('Balance {amount}', { amount: formatRs(terms.balance) })
-                  }
-                  hintColor={short > 0 ? colors.danger : undefined}
-                  chosen={chosenPay === 'wallet'}
-                  onPress={() => setPayWith('wallet')}
-                  action={
-                    short > 0 ? (
-                      <Pressable onPress={() => navigation.navigate('AddCoins', { needed: short })} hitSlop={8}>
-                        <AppText variant="label" color={colors.primary}>
-                          {t('Add money')}
-                        </AppText>
-                      </Pressable>
-                    ) : null
-                  }
-                />
-                {TOP_UP_METHODS.map(m => (
-                  <PayOption
-                    key={m.method}
-                    icon={m.method === 'card' ? CreditCard : Smartphone}
-                    label={m.label}
-                    hint={canUse(m.method) ? m.hint : t('Not available yet')}
-                    disabled={!canUse(m.method)}
-                    chosen={chosenPay === m.method}
-                    onPress={() => setPayWith(m.method)}
-                    divided
-                  />
-                ))}
+            <View style={styles.feeRow}>
+              <View style={styles.flex}>
+                <AppText variant="label" color={colors.textMuted}>
+                  {t('Fee for this shop')}
+                </AppText>
+                <AppText variant="caption" color={colors.textMuted}>
+                  {t('Fill in the details, then choose how to pay.')}
+                </AppText>
               </View>
+              <AppText variant="subheading">{formatRs(fee)}</AppText>
             </View>
           ) : null}
         </Card>
@@ -631,81 +544,12 @@ export function PickerField({
   );
 }
 
-/** One way to pay another shop's fee, as a radio row. */
-function PayOption({
-  icon,
-  label,
-  hint,
-  hintColor,
-  chosen,
-  disabled,
-  divided,
-  action,
-  onPress,
-}: {
-  icon: LucideIcon;
-  label: string;
-  hint: string;
-  hintColor?: string;
-  chosen: boolean;
-  disabled?: boolean;
-  divided?: boolean;
-  action?: React.ReactNode;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => [
-        styles.payRow,
-        divided && styles.payDivided,
-        disabled && styles.disabled,
-        pressed && styles.pressed,
-      ]}
-      accessibilityRole="radio"
-      accessibilityState={{ checked: chosen, disabled: !!disabled }}
-    >
-      <IconCircle icon={icon} size={36} />
-      <View style={styles.flex}>
-        <AppText variant="bodyBold">{label}</AppText>
-        <AppText variant="caption" color={hintColor ?? colors.textMuted}>
-          {hint}
-        </AppText>
-      </View>
-      {action}
-      <View style={[styles.radio, chosen && styles.radioOn]}>
-        {chosen ? <Check size={14} color={colors.white} /> : null}
-      </View>
-    </Pressable>
-  );
-}
-
 const styles = themedStyles(() => StyleSheet.create({
   flex: { flex: 1 },
   intro: { marginTop: spacing.xs, marginBottom: spacing.lg },
   terms: { gap: spacing.md, marginBottom: spacing.lg },
   termsHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  payTitle: { marginBottom: spacing.sm },
-  payList: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-  },
-  payRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
-  payDivided: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  pressed: { opacity: 0.7 },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  feeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   label: { marginBottom: spacing.sm },
   banner: {
     height: 140,

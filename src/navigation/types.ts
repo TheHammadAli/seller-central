@@ -23,11 +23,13 @@ export type RootStackParamList = {
    *  after a shop was chosen. */
   ChooseShop: undefined;
   /** Creating a shop on Fazl: for an account with none, or another one.
-   *  `paidFor`: the top-up just paid on AddCoins for another shop's fee. */
-  CreateShop: { paidFor?: string } | undefined;
-  /** Money into the owner's Fazl wallet, e.g. for another shop's fee: the amount
-   *  missing (`needed`, rupees), or the whole fee paid with `method` right now
-   *  (`shopFee`, rupees), after which Create shop sends the shop on. */
+   *  Back from paying another shop's fee on AddCoins: `paidFor`, the gateway
+   *  payment just made; `fromWalletAt`, when the owner chose to pay from the
+   *  wallet. Either way the shop is then sent for approval. */
+  CreateShop: { paidFor?: string; fromWalletAt?: number } | undefined;
+  /** Paying Fazl: money into the owner's wallet (`needed`: what another shop's
+   *  fee is short of, rupees), or another shop's whole fee (`shopFee`, rupees),
+   *  from the wallet or a gateway, after which Create shop sends the shop on. */
   AddCoins: { needed?: number; shopFee?: number; method?: CoinMethod } | undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   OrderDetail: { orderId: string };

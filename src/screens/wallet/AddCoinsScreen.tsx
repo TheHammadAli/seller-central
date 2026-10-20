@@ -1,7 +1,10 @@
-import { Check, CreditCard, Smartphone } from 'lucide-react-native';
+import { Check, CreditCard, Smartphone, Wallet, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import { buyCoins, CoinMethod, CoinOptions, CoinPurchase, getCoinOptions, getCoinPurchase } from '../../api/coins';
+import { getNewShopTerms, NewShopTerms } from '../../api/shopRequests';
 import {
   AppText,
   Button,
@@ -25,42 +28,55 @@ const POLL_FOR_MS = 3 * 60 * 1000;
 /** 03XXXXXXXXX, +92 3XX XXXXXXX and the like. */
 const MOBILE_RE = /^(?:\+?92|0092|0)?3\d{9}$/;
 
-/** The ways to pay Fazl (Create shop offers them for another shop's fee too). */
+/** The ways to pay Fazl through a gateway. */
 export const TOP_UP_METHODS: { method: CoinMethod; label: string; hint: string }[] = [
   { method: 'jazzcash', label: 'JazzCash', hint: t('Pay from your JazzCash account') },
   { method: 'easypaisa', label: 'Easypaisa', hint: t('Pay from your Easypaisa account') },
-  { method: 'card', label: t('Debit or credit card'), hint: t('Opens a secure card page') },
+  { method: 'card', label: t('Debit or credit card'), hint: t("Enter your card's details on JazzCash's secure page") },
 ];
 
-/** form → phone (approving on the phone) | card (paying in the browser) | pending (waiting for the gateway) */
+/** A gateway, or — for another shop's fee only — the Fazl wallet. */
+type PayMethod = CoinMethod | 'wallet';
+
+/** form → phone (approving on the phone) | card (paying on the card page) | pending (waiting for the gateway) */
 type Stage = 'form' | 'phone' | 'card' | 'pending';
 
 /**
- * Adding money to the owner's Fazl wallet with JazzCash, Easypaisa or a card
- * (a top-up — money, not coins), as in the Fazl app. Opened from Create shop
- * when the wallet can't cover another shop's fee (`needed`, rupees).
+ * Paying Fazl. Two uses:
+ *
+ * - Adding money to the owner's Fazl wallet with JazzCash, Easypaisa or a
+ *   card (a top-up — money, not coins), as in the Fazl app; `needed` is what
+ *   another shop's fee is short of.
+ * - Paying another shop's fee (`shopFee`, rupees), opened by Create shop's
+ *   "Pay & send for approval": from the Fazl wallet, or with JazzCash,
+ *   Easypaisa or a card. Once it's paid, Create shop sends the shop for
+ *   approval (`fromWalletAt` / `paidFor`). A gateway payment goes into the
+ *   wallet and the fee is taken from it there, so the books stay one ledger.
  *
  * A mobile account is charged straight away and approved on the owner's
- * phone while this screen waits; a card opens JazzCash's card page in the
- * browser, and the purchase is checked when the owner comes back.
+ * phone while this screen waits; a card opens JazzCash's card page inside the
+ * app, where the card's details are entered, and the purchase is checked as
+ * that page moves on.
  */
 export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'>) {
+  const insets = useSafeAreaInsets();
   const needed = route.params?.needed;
-  // Paying another shop's whole fee with `method` now (from Create shop): the
-  // amount is the fee, and once it's paid Create shop sends the shop on.
   const shopFee = route.params?.shopFee;
   const [options, setOptions] = useState<CoinOptions | null>(null);
+  // Paying a shop's fee: the owner's wallet, to offer it.
+  const [terms, setTerms] = useState<NewShopTerms | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [amount, setAmount] = useState(() => {
     const start = shopFee ?? needed;
     return start ? String(Math.ceil(start)) : '';
   });
-  const [method, setMethod] = useState<CoinMethod | null>(route.params?.method ?? null);
+  const [method, setMethod] = useState<PayMethod | null>(route.params?.method ?? null);
   const [mobile, setMobile] = useState('');
   const [cnic, setCnic] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>('form');
   const [tracked, setTracked] = useState<{ id: string; since: number } | null>(null);
+  const [cardOpen, setCardOpen] = useState(false);
   const checkoutUrl = useRef<string | null>(null);
   const mounted = useRef(true);
   // The purchase still open. Cleared the moment it settles, so the poll and
@@ -76,17 +92,22 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
 
   const loadOptions = useCallback(() => {
     setLoadError(null);
-    getCoinOptions()
-      .then(o => {
+    Promise.all([getCoinOptions(), shopFee ? getNewShopTerms().catch(() => null) : Promise.resolve(null)])
+      .then(([o, shopTerms]) => {
         setOptions(o);
-        setMethod(m =>
-          m && o.available[m] ? m : TOP_UP_METHODS.find(x => o.available[x.method])?.method ?? null,
-        );
-        // What the shop needs, raised to the smallest amount Fazl sells.
+        setTerms(shopTerms);
+        const walletCovers =
+          !!shopFee && !!shopTerms && shopTerms.walletEnabled && !shopTerms.walletFrozen && shopTerms.balance >= shopFee;
+        setMethod(m => {
+          if (m === 'wallet' ? walletCovers : m && o.available[m]) return m;
+          if (walletCovers) return 'wallet';
+          return TOP_UP_METHODS.find(x => o.available[x.method])?.method ?? null;
+        });
+        // What the shop needs, raised to the smallest amount Fazl takes.
         setAmount(a => (a && Number(a) < o.min ? String(o.min) : a));
       })
       .catch(e => setLoadError(e instanceof Error ? e.message : t('Something went wrong')));
-  }, []);
+  }, [shopFee]);
 
   useEffect(loadOptions, [loadOptions]);
 
@@ -97,6 +118,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
       if (p.status === 'pending') return false;
       activeId.current = null;
       setTracked(null);
+      setCardOpen(false);
       if (p.status === 'completed') {
         if (shopFee) {
           // Back to the shop, which now goes for approval paid from this.
@@ -130,7 +152,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
   }, [tracked, finish]);
 
   // While a purchase is open: check it every few seconds for a few minutes,
-  // and whenever the app comes back to the front (after the card page).
+  // and whenever the app comes back to the front.
   useEffect(() => {
     if (!tracked) return undefined;
     const timer = setInterval(() => {
@@ -157,8 +179,20 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
 
   const value = Number(amount);
   const isMobile = method === 'jazzcash' || method === 'easypaisa';
+  const walletReady = !!terms && terms.walletEnabled && !terms.walletFrozen;
+  const walletShort = shopFee && terms ? Math.max(0, shopFee - terms.balance) : 0;
+  const walletCovers = !!shopFee && walletReady && walletShort === 0;
+  // What this payment takes: the fee from the wallet; through a gateway, the
+  // fee raised to the smallest amount Fazl takes.
+  const charge = method === 'wallet' && shopFee ? shopFee : value;
 
   const pay = async () => {
+    if (method === 'wallet') {
+      if (!walletCovers) return;
+      // The fee comes out of the wallet as Create shop sends the shop.
+      navigation.popTo('CreateShop', { fromWalletAt: Date.now() }, { merge: true });
+      return;
+    }
     if (!Number.isInteger(value) || value < options.min || value > options.max) {
       setError(t('Enter an amount from {min} to {max}.', { min: formatRs(options.min), max: formatRs(options.max) }));
       return;
@@ -181,7 +215,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
         checkoutUrl.current = res.checkoutUrl;
         setTracked({ id: res.purchase.id, since: Date.now() });
         setStage('card');
-        Linking.openURL(res.checkoutUrl).catch(() => undefined);
+        setCardOpen(true);
         return;
       }
       if (finish(res.purchase)) return;
@@ -214,7 +248,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
                   amount: formatRs(value),
                 })
               : stage === 'card'
-                ? t('Pay {amount} in the browser, then come back here. The money is added once JazzCash confirms it.', {
+                ? t("Enter your card's details on the card page to pay {amount}. This moves on once JazzCash confirms it.", {
                     amount: formatRs(value),
                   })
                 : t('This can take a minute. You can leave this screen; the money is added either way.')}
@@ -224,112 +258,208 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
               <Button
                 title={t('Open the card page again')}
                 variant="outline"
-                onPress={() => checkoutUrl.current && Linking.openURL(checkoutUrl.current).catch(() => undefined)}
+                onPress={() => setCardOpen(true)}
                 style={styles.stretch}
               />
               <Button title={t("I've paid, check now")} variant="ghost" onPress={check} style={styles.stretch} />
             </>
           ) : null}
         </View>
+
+        {/* JazzCash's card page, inside the app: the card's details are entered
+            there, never in Fazl. Each step it takes is a cue to check the
+            purchase, and it closes once the payment has settled. */}
+        <Modal
+          visible={cardOpen && !!checkoutUrl.current}
+          animationType="slide"
+          onRequestClose={() => {
+            setCardOpen(false);
+            check();
+          }}
+        >
+          <View style={[styles.cardSheet, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+            <View style={styles.cardHead}>
+              <IconCircle icon={CreditCard} size={32} />
+              <View style={styles.flex}>
+                <AppText variant="bodyBold">{t('Card payment')}</AppText>
+                <AppText variant="caption" color={colors.textMuted}>
+                  {formatRs(value)} · JazzCash
+                </AppText>
+              </View>
+              <Pressable
+                onPress={() => {
+                  setCardOpen(false);
+                  check();
+                }}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={t('Close')}
+              >
+                <X size={22} color={colors.text} />
+              </Pressable>
+            </View>
+            {checkoutUrl.current ? (
+              <WebView
+                source={{ uri: checkoutUrl.current }}
+                style={styles.flex}
+                startInLoadingState
+                renderLoading={() => (
+                  <View style={styles.webLoading}>
+                    <ActivityIndicator color={colors.primary} size="large" />
+                  </View>
+                )}
+                onNavigationStateChange={() => check()}
+              />
+            ) : null}
+          </View>
+        </Modal>
       </Screen>
     );
   }
+
+  const rows: { key: PayMethod; label: string; hint: string; icon: typeof Wallet; available: boolean; warn?: boolean }[] = [
+    ...(shopFee
+      ? [
+          {
+            key: 'wallet' as const,
+            label: t('Fazl wallet'),
+            icon: Wallet,
+            available: walletCovers,
+            warn: walletReady && walletShort > 0,
+            hint: !terms
+              ? t('Not available right now')
+              : !walletReady
+                ? t('Not available right now')
+                : walletShort > 0
+                  ? `${t('Balance {amount}', { amount: formatRs(terms.balance) })} · ${t('{amount} short', {
+                      amount: formatRs(walletShort),
+                    })}`
+                  : t('Balance {amount}', { amount: formatRs(terms.balance) }),
+          },
+        ]
+      : []),
+    ...TOP_UP_METHODS.map(m => ({
+      key: m.method,
+      label: m.label,
+      icon: m.method === 'card' ? CreditCard : Smartphone,
+      available: options.enabled && options.available[m.method],
+      hint: options.enabled && options.available[m.method] ? m.hint : t('Not available yet'),
+    })),
+  ];
 
   return (
     <Screen
       header={<Header title={title} />}
       footer={
         <Button
-          title={value > 0 ? t('Pay {amount}', { amount: formatRs(value) }) : t('Pay')}
+          title={
+            method === 'wallet'
+              ? t('Pay {amount} from wallet', { amount: formatRs(charge) })
+              : charge > 0
+                ? t('Pay {amount}', { amount: formatRs(charge) })
+                : t('Pay')
+          }
           flex
-          disabled={!options.enabled || !method || !value}
+          disabled={!method || (method === 'wallet' ? !walletCovers : !options.enabled || !value)}
           onPress={pay}
         />
       }
     >
-      <AppText color={colors.textMuted} style={styles.intro}>
-        {shopFee
-          ? t("Your new shop's fee. Once it's paid, your shop is sent to Fazl for approval. If Fazl doesn't approve it, the money comes back to your Fazl wallet.")
-          : t('The money goes into your Fazl wallet, and Fazl takes the fee for another shop from it.')}
-      </AppText>
-      {!options.enabled ? (
-        <AppText variant="label" color={colors.danger} style={styles.intro}>
-          {t('Adding money is paused for now. Please try again later.')}
-        </AppText>
-      ) : null}
+      {shopFee ? (
+        // What's being paid, and what happens then.
+        <Card style={styles.summary}>
+          <AppText color={colors.textMuted}>{t('Amount to pay')}</AppText>
+          <AppText variant="title">{formatRs(charge || shopFee)}</AppText>
+          <AppText variant="caption" color={colors.textMuted}>
+            {t(
+              "Your new shop's fee. Once it's paid, your shop is sent to Fazl for approval. If Fazl doesn't approve it, the money comes back to your Fazl wallet.",
+            )}
+          </AppText>
+          {method !== 'wallet' && value > shopFee ? (
+            <AppText variant="caption" color={colors.textMuted}>
+              {t('The smallest payment is {min}. What is left after the fee stays in your Fazl wallet.', {
+                min: formatRs(options.min),
+              })}
+            </AppText>
+          ) : null}
+        </Card>
+      ) : (
+        <>
+          <AppText color={colors.textMuted} style={styles.intro}>
+            {t('The money goes into your Fazl wallet, and Fazl takes the fee for another shop from it.')}
+          </AppText>
+          {!options.enabled ? (
+            <AppText variant="label" color={colors.danger} style={styles.intro}>
+              {t('Adding money is paused for now. Please try again later.')}
+            </AppText>
+          ) : null}
 
-      {options.presets.length && !shopFee ? (
-        <View style={styles.chips}>
-          {options.presets.map(p => {
-            const on = value === p;
-            return (
-              <Pressable
-                key={p}
-                onPress={() => {
-                  setAmount(String(p));
-                  setError(null);
-                }}
-                style={[styles.chip, on && styles.chipOn]}
-              >
-                <AppText variant="label" color={on ? colors.white : colors.text}>
-                  {formatRs(p)}
-                </AppText>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
-      <TextField
-        label={t('Amount')}
-        prefix={t('Rs')}
-        value={amount}
-        onChangeText={v => {
-          setAmount(v.replace(/[^0-9]/g, ''));
-          setError(null);
-        }}
-        keyboardType="number-pad"
-        placeholder={String(options.min)}
-        editable={!shopFee}
-        hint={
-          shopFee
-            ? value > shopFee
-              ? t('The smallest payment is {min}. What is left after the fee stays in your Fazl wallet.', {
-                  min: formatRs(options.min),
-                })
-              : t("Your new shop's fee")
-            : needed
-            ? t('You need {amount} more for your new shop.', { amount: formatRs(needed) })
-            : t('From {min} to {max}', { min: formatRs(options.min), max: formatRs(options.max) })
-        }
-      />
+          {options.presets.length ? (
+            <View style={styles.chips}>
+              {options.presets.map(p => {
+                const on = value === p;
+                return (
+                  <Pressable
+                    key={p}
+                    onPress={() => {
+                      setAmount(String(p));
+                      setError(null);
+                    }}
+                    style={[styles.chip, on && styles.chipOn]}
+                  >
+                    <AppText variant="label" color={on ? colors.white : colors.text}>
+                      {formatRs(p)}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+          <TextField
+            label={t('Amount')}
+            prefix={t('Rs')}
+            value={amount}
+            onChangeText={v => {
+              setAmount(v.replace(/[^0-9]/g, ''));
+              setError(null);
+            }}
+            keyboardType="number-pad"
+            placeholder={String(options.min)}
+            hint={
+              needed
+                ? t('You need {amount} more for your new shop.', { amount: formatRs(needed) })
+                : t('From {min} to {max}', { min: formatRs(options.min), max: formatRs(options.max) })
+            }
+          />
+        </>
+      )}
 
       <SectionHeader title={t('Pay with')} />
       <Card padded={false}>
-        {TOP_UP_METHODS.map((m, i) => {
-          const available = options.available[m.method];
-          const chosen = m.method === method;
+        {rows.map((row, i) => {
+          const chosen = row.key === method;
           return (
             <Pressable
-              key={m.method}
-              disabled={!available}
+              key={row.key}
+              disabled={!row.available}
               onPress={() => {
-                setMethod(m.method);
+                setMethod(row.key);
                 setError(null);
               }}
               style={({ pressed }) => [
                 styles.row,
                 i > 0 && styles.border,
-                !available && styles.off,
+                !row.available && styles.off,
                 pressed && styles.pressed,
               ]}
               accessibilityRole="radio"
-              accessibilityState={{ checked: chosen, disabled: !available }}
+              accessibilityState={{ checked: chosen, disabled: !row.available }}
             >
-              <IconCircle icon={m.method === 'card' ? CreditCard : Smartphone} tone="primary" size={36} />
+              <IconCircle icon={row.icon} tone="primary" size={36} />
               <View style={styles.flex}>
-                <AppText variant="bodyBold">{m.label}</AppText>
-                <AppText variant="caption" color={colors.textMuted}>
-                  {available ? m.hint : t('Not available yet')}
+                <AppText variant="bodyBold">{row.label}</AppText>
+                <AppText variant="caption" color={row.warn ? colors.danger : colors.textMuted}>
+                  {row.hint}
                 </AppText>
               </View>
               <View style={[styles.radio, chosen && styles.radioOn]}>
@@ -383,6 +513,7 @@ const styles = themedStyles(() =>
   StyleSheet.create({
     flex: { flex: 1 },
     intro: { marginBottom: spacing.lg },
+    summary: { gap: spacing.xs, marginBottom: spacing.sm },
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
     chip: {
       paddingHorizontal: spacing.md,
@@ -411,5 +542,25 @@ const styles = themedStyles(() =>
     error: { marginTop: spacing.md },
     waiting: { alignItems: 'center', gap: spacing.md, paddingTop: spacing.xxl },
     stretch: { alignSelf: 'stretch' },
+    cardSheet: { flex: 1, backgroundColor: colors.surface },
+    cardHead: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    webLoading: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+    },
   }),
 );
