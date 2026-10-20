@@ -46,7 +46,8 @@ import { AddDetailsSheet, ParameterValueSheet } from './ParameterSheets';
 import { t } from '../../i18n';
 
 /** Fazl's own limit for one listing. */
-const MAX_PHOTOS = 5;
+/** A listing takes up to ten photos (the backend's MAX_PRODUCT_IMAGES). */
+const MAX_PHOTOS = 10;
 
 type Field = 'images' | 'title' | 'description' | 'category' | 'price' | 'parameters';
 type Errors = Partial<Record<Field, string>>;
