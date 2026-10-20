@@ -906,9 +906,8 @@ const ur: Record<string, string> = {
   'Shop limit reached': 'دکانوں کی حد پوری ہو گئی',
   'You can have up to {count} shops on Fazl, counting ones waiting for approval.':
     'فضل پر آپ کی زیادہ سے زیادہ {count} دکانیں ہو سکتی ہیں، منظوری کی منتظر دکانوں سمیت۔',
-  'Not enough coins': 'کوائنز کم ہیں',
-  'Another shop costs {fee}, and your Fazl wallet has {balance}. Add coins first.':
-    'ایک اور دکان کی فیس {fee} ہے، اور آپ کے فضل والٹ میں {balance} ہیں۔ پہلے کوائنز شامل کریں۔',
+  'Not enough money': 'والٹ میں رقم کم ہے',
+  'Another shop costs {fee}, and your Fazl wallet has {balance}. Add money first.': 'ایک اور دکان کی فیس {fee} ہے، اور آپ کے فضل والٹ میں {balance} ہیں۔ پہلے رقم شامل کریں۔',
   'Pay {amount}?': '{amount} ادا کریں؟',
   "It's taken from your Fazl wallet now. If Fazl doesn't approve the shop, it goes back to your wallet.":
     'یہ رقم ابھی آپ کے فضل والٹ سے کٹے گی۔ اگر فضل نے دکان منظور نہ کی تو یہ آپ کے والٹ میں واپس آ جائے گی۔',
@@ -937,8 +936,8 @@ const ur: Record<string, string> = {
   '{amount} is back in your wallet': '{amount} آپ کے والٹ میں واپس آ گئے',
   'Your shop is approved': 'آپ کی دکان منظور ہو گئی',
   "Your shop request wasn't approved": 'آپ کی دکان کی درخواست منظور نہیں ہوئی',
-  'Add coins': 'کوائنز شامل کریں',
-  'Coins added': 'کوائنز شامل ہو گئے',
+  'Add money': 'رقم شامل کریں',
+  'Money added': 'رقم شامل ہو گئی',
   '{amount} is now in your Fazl wallet.': '{amount} اب آپ کے فضل والٹ میں ہیں۔',
   'The payment did not go through': 'ادائیگی نہیں ہو سکی',
   'You were not charged.': 'آپ سے کوئی رقم نہیں کٹی۔',
@@ -950,18 +949,14 @@ const ur: Record<string, string> = {
   'Waiting for the payment to be confirmed': 'ادائیگی کی تصدیق کا انتظار ہے',
   '{name} has sent a request to {number}. Enter your MPIN there to pay {amount}.':
     '{name} نے {number} پر درخواست بھیجی ہے۔ {amount} ادا کرنے کے لیے وہاں اپنا MPIN درج کریں۔',
-  'Pay {amount} in the browser, then come back here. Your coins are added once JazzCash confirms it.':
-    'براؤزر میں {amount} ادا کریں، پھر یہاں واپس آئیں۔ جاز کیش کی تصدیق کے بعد آپ کے کوائنز شامل ہو جائیں گے۔',
-  'This can take a minute. You can leave this screen; the coins are added either way.':
-    'اس میں ایک منٹ لگ سکتا ہے۔ آپ یہ اسکرین چھوڑ سکتے ہیں؛ کوائنز ہر حال میں شامل ہو جائیں گے۔',
+  'Pay {amount} in the browser, then come back here. The money is added once JazzCash confirms it.': 'براؤزر میں {amount} ادا کریں، پھر یہاں واپس آئیں۔ جاز کیش کی تصدیق کے بعد رقم شامل ہو جائے گی۔',
+  'This can take a minute. You can leave this screen; the money is added either way.': 'اس میں ایک منٹ لگ سکتا ہے۔ آپ یہ اسکرین چھوڑ سکتے ہیں؛ رقم ہر حال میں شامل ہو جائے گی۔',
   'Open the card page again': 'کارڈ والا صفحہ دوبارہ کھولیں',
   "I've paid, check now": 'میں نے ادائیگی کر دی، ابھی چیک کریں',
   'Pay {amount}': '{amount} ادا کریں',
   Pay: 'ادا کریں',
-  'Coins go into your Fazl wallet: 1 coin = Rs 1. Fazl takes the fee for another shop from them.':
-    'کوائنز آپ کے فضل والٹ میں جاتے ہیں: 1 کوائن = Rs 1۔ فضل ایک اور دکان کی فیس انہی سے لیتا ہے۔',
-  'Buying coins is paused for now. Please try again later.':
-    'کوائنز خریدنا ابھی بند ہے۔ براہ کرم بعد میں کوشش کریں۔',
+  'The money goes into your Fazl wallet, and Fazl takes the fee for another shop from it.': 'رقم آپ کے فضل والٹ میں جاتی ہے، اور فضل ایک اور دکان کی فیس اسی سے لیتا ہے۔',
+  'Adding money is paused for now. Please try again later.': 'رقم شامل کرنا ابھی بند ہے۔ براہ کرم بعد میں کوشش کریں۔',
   'You need {amount} more for your new shop.': 'آپ کی نئی دکان کے لیے {amount} مزید چاہئیں۔',
   'From {min} to {max}': '{min} سے {max} تک',
   'Pay with': 'ادائیگی کا طریقہ',

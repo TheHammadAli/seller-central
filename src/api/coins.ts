@@ -1,6 +1,7 @@
-// Adding coins to the owner's Fazl wallet (1 coin = Rs 1) with JazzCash,
-// Easypaisa or a card — the same purchase the Fazl app makes. Seller Central
-// uses it to pay for another shop.
+// Adding money to the owner's Fazl wallet (a top-up) with JazzCash, Easypaisa
+// or a card — the same top-up the Fazl app makes. Seller Central uses it to
+// pay for another shop. It's money, not coins: coins only come from rewards
+// and referrals. The backend still names these routes "coins" (wallet/me/coins).
 import { api } from './http';
 
 export type CoinMethod = 'jazzcash' | 'easypaisa' | 'card';

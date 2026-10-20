@@ -35,9 +35,9 @@ const METHODS: { method: CoinMethod; label: string; hint: string }[] = [
 type Stage = 'form' | 'phone' | 'card' | 'pending';
 
 /**
- * Adding coins to the owner's Fazl wallet (1 coin = Rs 1) with JazzCash,
- * Easypaisa or a card — as in the Fazl app. Opened from Create shop when the
- * wallet can't cover another shop's fee (`needed`, rupees).
+ * Adding money to the owner's Fazl wallet with JazzCash, Easypaisa or a card
+ * (a top-up — money, not coins), as in the Fazl app. Opened from Create shop
+ * when the wallet can't cover another shop's fee (`needed`, rupees).
  *
  * A mobile account is charged straight away and approved on the owner's
  * phone while this screen waits; a card opens JazzCash's card page in the
@@ -90,7 +90,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
       setTracked(null);
       if (p.status === 'completed') {
         Alert.alert(
-          t('Coins added'),
+          t('Money added'),
           t('{amount} is now in your Fazl wallet.', { amount: formatRs(p.amount) }),
           [{ text: t('OK'), onPress: () => navigation.goBack() }],
           { cancelable: false },
@@ -133,7 +133,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
 
   if (!options) {
     return (
-      <Screen header={<Header title={t('Add coins')} />} scroll={false}>
+      <Screen header={<Header title={t('Add money')} />} scroll={false}>
         <StateView error={loadError} onRetry={loadOptions} />
       </Screen>
     );
@@ -180,7 +180,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
 
   if (stage !== 'form') {
     return (
-      <Screen header={<Header title={t('Add coins')} />}>
+      <Screen header={<Header title={t('Add money')} />}>
         <View style={styles.waiting}>
           <ActivityIndicator color={colors.primary} size="large" />
           <AppText variant="subheading" align="center">
@@ -198,10 +198,10 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
                   amount: formatRs(value),
                 })
               : stage === 'card'
-                ? t('Pay {amount} in the browser, then come back here. Your coins are added once JazzCash confirms it.', {
+                ? t('Pay {amount} in the browser, then come back here. The money is added once JazzCash confirms it.', {
                     amount: formatRs(value),
                   })
-                : t('This can take a minute. You can leave this screen; the coins are added either way.')}
+                : t('This can take a minute. You can leave this screen; the money is added either way.')}
           </AppText>
           {stage === 'card' ? (
             <>
@@ -221,7 +221,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
 
   return (
     <Screen
-      header={<Header title={t('Add coins')} />}
+      header={<Header title={t('Add money')} />}
       footer={
         <Button
           title={value > 0 ? t('Pay {amount}', { amount: formatRs(value) }) : t('Pay')}
@@ -232,11 +232,11 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
       }
     >
       <AppText color={colors.textMuted} style={styles.intro}>
-        {t('Coins go into your Fazl wallet: 1 coin = Rs 1. Fazl takes the fee for another shop from them.')}
+        {t('The money goes into your Fazl wallet, and Fazl takes the fee for another shop from it.')}
       </AppText>
       {!options.enabled ? (
         <AppText variant="label" color={colors.danger} style={styles.intro}>
-          {t('Buying coins is paused for now. Please try again later.')}
+          {t('Adding money is paused for now. Please try again later.')}
         </AppText>
       ) : null}
 

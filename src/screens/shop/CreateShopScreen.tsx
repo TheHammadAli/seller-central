@@ -185,14 +185,14 @@ export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) 
     }
     if (extra && short > 0) {
       Alert.alert(
-        t('Not enough coins'),
-        t('Another shop costs {fee}, and your Fazl wallet has {balance}. Add coins first.', {
+        t('Not enough money'),
+        t('Another shop costs {fee}, and your Fazl wallet has {balance}. Add money first.', {
           fee: formatRs(fee),
           balance: formatRs(terms?.balance ?? 0),
         }),
         [
           { text: t('Cancel'), style: 'cancel' },
-          { text: t('Add coins'), onPress: () => navigation.navigate('AddCoins', { needed: short }) },
+          { text: t('Add money'), onPress: () => navigation.navigate('AddCoins', { needed: short }) },
         ],
       );
       return;
@@ -328,7 +328,7 @@ export function CreateShopScreen({ navigation }: RootScreenProps<'CreateShop'>) 
               </AppText>
               <Pressable onPress={() => navigation.navigate('AddCoins', short > 0 ? { needed: short } : undefined)} hitSlop={8}>
                 <AppText variant="label" color={colors.primary}>
-                  {t('Add coins')}
+                  {t('Add money')}
                 </AppText>
               </Pressable>
             </View>

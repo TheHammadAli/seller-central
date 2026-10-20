@@ -23,7 +23,7 @@ export type RootStackParamList = {
   ChooseShop: undefined;
   /** Creating a shop on Fazl: for an account with none, or another one. */
   CreateShop: undefined;
-  /** Coins into the owner's Fazl wallet, e.g. for another shop's fee (`needed`, rupees). */
+  /** Money into the owner's Fazl wallet, e.g. for another shop's fee (`needed`, rupees). */
   AddCoins: { needed?: number } | undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   OrderDetail: { orderId: string };
