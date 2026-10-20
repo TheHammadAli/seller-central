@@ -25,7 +25,8 @@ const POLL_FOR_MS = 3 * 60 * 1000;
 /** 03XXXXXXXXX, +92 3XX XXXXXXX and the like. */
 const MOBILE_RE = /^(?:\+?92|0092|0)?3\d{9}$/;
 
-const METHODS: { method: CoinMethod; label: string; hint: string }[] = [
+/** The ways to pay Fazl (Create shop offers them for another shop's fee too). */
+export const TOP_UP_METHODS: { method: CoinMethod; label: string; hint: string }[] = [
   { method: 'jazzcash', label: 'JazzCash', hint: t('Pay from your JazzCash account') },
   { method: 'easypaisa', label: 'Easypaisa', hint: t('Pay from your Easypaisa account') },
   { method: 'card', label: t('Debit or credit card'), hint: t('Opens a secure card page') },
@@ -45,10 +46,16 @@ type Stage = 'form' | 'phone' | 'card' | 'pending';
  */
 export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'>) {
   const needed = route.params?.needed;
+  // Paying another shop's whole fee with `method` now (from Create shop): the
+  // amount is the fee, and once it's paid Create shop sends the shop on.
+  const shopFee = route.params?.shopFee;
   const [options, setOptions] = useState<CoinOptions | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [amount, setAmount] = useState(needed ? String(Math.ceil(needed)) : '');
-  const [method, setMethod] = useState<CoinMethod | null>(null);
+  const [amount, setAmount] = useState(() => {
+    const start = shopFee ?? needed;
+    return start ? String(Math.ceil(start)) : '';
+  });
+  const [method, setMethod] = useState<CoinMethod | null>(route.params?.method ?? null);
   const [mobile, setMobile] = useState('');
   const [cnic, setCnic] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +79,9 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
     getCoinOptions()
       .then(o => {
         setOptions(o);
-        setMethod(m => m ?? METHODS.find(x => o.available[x.method])?.method ?? null);
+        setMethod(m =>
+          m && o.available[m] ? m : TOP_UP_METHODS.find(x => o.available[x.method])?.method ?? null,
+        );
         // What the shop needs, raised to the smallest amount Fazl sells.
         setAmount(a => (a && Number(a) < o.min ? String(o.min) : a));
       })
@@ -89,6 +98,11 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
       activeId.current = null;
       setTracked(null);
       if (p.status === 'completed') {
+        if (shopFee) {
+          // Back to the shop, which now goes for approval paid from this.
+          navigation.popTo('CreateShop', { paidFor: p.id }, { merge: true });
+          return true;
+        }
         Alert.alert(
           t('Money added'),
           t('{amount} is now in your Fazl wallet.', { amount: formatRs(p.amount) }),
@@ -105,7 +119,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
       }
       return true;
     },
-    [navigation],
+    [navigation, shopFee],
   );
 
   const check = useCallback(() => {
@@ -131,9 +145,11 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
     };
   }, [tracked, check]);
 
+  const title = shopFee ? t('Pay for your shop') : t('Add money');
+
   if (!options) {
     return (
-      <Screen header={<Header title={t('Add money')} />} scroll={false}>
+      <Screen header={<Header title={title} />} scroll={false}>
         <StateView error={loadError} onRetry={loadOptions} />
       </Screen>
     );
@@ -180,7 +196,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
 
   if (stage !== 'form') {
     return (
-      <Screen header={<Header title={t('Add money')} />}>
+      <Screen header={<Header title={title} />}>
         <View style={styles.waiting}>
           <ActivityIndicator color={colors.primary} size="large" />
           <AppText variant="subheading" align="center">
@@ -221,7 +237,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
 
   return (
     <Screen
-      header={<Header title={t('Add money')} />}
+      header={<Header title={title} />}
       footer={
         <Button
           title={value > 0 ? t('Pay {amount}', { amount: formatRs(value) }) : t('Pay')}
@@ -232,7 +248,9 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
       }
     >
       <AppText color={colors.textMuted} style={styles.intro}>
-        {t('The money goes into your Fazl wallet, and Fazl takes the fee for another shop from it.')}
+        {shopFee
+          ? t("Your new shop's fee. Once it's paid, your shop is sent to Fazl for approval. If Fazl doesn't approve it, the money comes back to your Fazl wallet.")
+          : t('The money goes into your Fazl wallet, and Fazl takes the fee for another shop from it.')}
       </AppText>
       {!options.enabled ? (
         <AppText variant="label" color={colors.danger} style={styles.intro}>
@@ -240,7 +258,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
         </AppText>
       ) : null}
 
-      {options.presets.length ? (
+      {options.presets.length && !shopFee ? (
         <View style={styles.chips}>
           {options.presets.map(p => {
             const on = value === p;
@@ -271,8 +289,15 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
         }}
         keyboardType="number-pad"
         placeholder={String(options.min)}
+        editable={!shopFee}
         hint={
-          needed
+          shopFee
+            ? value > shopFee
+              ? t('The smallest payment is {min}. What is left after the fee stays in your Fazl wallet.', {
+                  min: formatRs(options.min),
+                })
+              : t("Your new shop's fee")
+            : needed
             ? t('You need {amount} more for your new shop.', { amount: formatRs(needed) })
             : t('From {min} to {max}', { min: formatRs(options.min), max: formatRs(options.max) })
         }
@@ -280,7 +305,7 @@ export function AddCoinsScreen({ navigation, route }: RootScreenProps<'AddCoins'
 
       <SectionHeader title={t('Pay with')} />
       <Card padded={false}>
-        {METHODS.map((m, i) => {
+        {TOP_UP_METHODS.map((m, i) => {
           const available = options.available[m.method];
           const chosen = m.method === method;
           return (

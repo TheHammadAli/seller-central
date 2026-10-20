@@ -1,5 +1,6 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { CoinMethod } from '../api/coins';
 import { PostType, TeamMember, TeamMemberRole } from '../types/models';
 
 export type TabParamList = {
@@ -21,10 +22,13 @@ export type RootStackParamList = {
    *  sharing one name across the two auth stages kept the picker on screen
    *  after a shop was chosen. */
   ChooseShop: undefined;
-  /** Creating a shop on Fazl: for an account with none, or another one. */
-  CreateShop: undefined;
-  /** Money into the owner's Fazl wallet, e.g. for another shop's fee (`needed`, rupees). */
-  AddCoins: { needed?: number } | undefined;
+  /** Creating a shop on Fazl: for an account with none, or another one.
+   *  `paidFor`: the top-up just paid on AddCoins for another shop's fee. */
+  CreateShop: { paidFor?: string } | undefined;
+  /** Money into the owner's Fazl wallet, e.g. for another shop's fee: the amount
+   *  missing (`needed`, rupees), or the whole fee paid with `method` right now
+   *  (`shopFee`, rupees), after which Create shop sends the shop on. */
+  AddCoins: { needed?: number; shopFee?: number; method?: CoinMethod } | undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   OrderDetail: { orderId: string };
   AssignRider: { orderId: string };

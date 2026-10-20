@@ -967,6 +967,20 @@ const ur: Record<string, string> = {
   'Not available yet': 'ابھی دستیاب نہیں',
   'Last 6 digits of CNIC': 'شناختی کارڈ کے آخری 6 ہندسے',
   'Of the CNIC the JazzCash account is registered on': 'جس شناختی کارڈ پر جاز کیش اکاؤنٹ رجسٹرڈ ہے',
+  // Another shop's fee paid from the wallet, or with JazzCash, Easypaisa or a card then.
+  'Fazl wallet': 'فضل والٹ',
+  'Balance {amount}': 'بیلنس {amount}',
+  'Pay {amount} with {method}': '{method} سے {amount} ادا کریں',
+  "Your first shop is free. This one costs {fee}: pay from your Fazl wallet, or with JazzCash, Easypaisa or a card. If Fazl doesn't approve it, the money comes back to your Fazl wallet.":
+    'آپ کی پہلی دکان مفت ہے۔ اس کی فیس {fee} ہے: اپنے فضل والٹ سے ادا کریں، یا جاز کیش، ایزی پیسہ یا کارڈ سے۔ اگر فضل نے اسے منظور نہ کیا تو رقم آپ کے فضل والٹ میں واپس آ جائے گی۔',
+  'Another shop costs {fee}, and your Fazl wallet has {balance}. Add money first, or pay with JazzCash, Easypaisa or a card.':
+    'ایک اور دکان کی فیس {fee} ہے، اور آپ کے فضل والٹ میں {balance} ہیں۔ پہلے رقم شامل کریں، یا جاز کیش، ایزی پیسہ یا کارڈ سے ادا کریں۔',
+  'Pay for your shop': 'اپنی دکان کی ادائیگی',
+  "Your new shop's fee. Once it's paid, your shop is sent to Fazl for approval. If Fazl doesn't approve it, the money comes back to your Fazl wallet.":
+    'آپ کی نئی دکان کی فیس۔ ادائیگی کے بعد آپ کی دکان منظوری کے لیے فضل کو بھیج دی جائے گی۔ اگر فضل نے اسے منظور نہ کیا تو رقم آپ کے فضل والٹ میں واپس آ جائے گی۔',
+  "Your new shop's fee": 'آپ کی نئی دکان کی فیس',
+  'The smallest payment is {min}. What is left after the fee stays in your Fazl wallet.':
+    'کم از کم ادائیگی {min} ہے۔ فیس کے بعد باقی رقم آپ کے فضل والٹ میں رہے گی۔',
 };
 
 export default ur;
