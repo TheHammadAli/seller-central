@@ -5,7 +5,9 @@ import { SignupScreen } from '../src/screens/auth/SignupScreen';
 import { createFazlAccount, sendSignupCode, verifySignupCode, sendPhoneSignupCode, verifyPhoneSignupCode } from '../src/api/account';
 import { useAuth } from '../src/state/AuthContext';
 
-jest.mock('../src/i18n', () => ({ t: (text: string) => text }));
+jest.mock('../src/i18n', () => ({ t: (text: string) => text, isUrdu: false, language: 'en', setLanguage: jest.fn() }));
+// Icons draw nothing here (the package ships ES modules Jest doesn't load).
+jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }));
 jest.mock('../src/api/http', () => ({ api: jest.fn() }));
 jest.mock('../src/api/account', () => ({ ...jest.requireActual('../src/api/account'), createFazlAccount: jest.fn(), sendSignupCode: jest.fn(), verifySignupCode: jest.fn(), sendPhoneSignupCode: jest.fn(), verifyPhoneSignupCode: jest.fn() }));
 jest.mock('../src/state/AuthContext', () => ({ useAuth: jest.fn() }));
@@ -15,7 +17,10 @@ jest.mock('../src/components', () => {
   return {
     Screen: ({ children }: any) => React.createElement(View, null, children),
     Header: () => null,
+    IconCircle: () => null,
     AppText: ({ children }: any) => React.createElement(Text, null, children),
+    // The code boxes' one field, by its label; completing it is left to "Verify".
+    CodeBoxes: ({ label, onChange, value }: any) => React.createElement(TextInput, { accessibilityLabel: label, value, onChangeText: onChange }),
     OutlinedField: ({ label, ...props }: any) => React.createElement(TextInput, { accessibilityLabel: label, ...props }),
     DoodleButton: ({ title, onPress, disabled }: any) => React.createElement(Pressable, { testID: title, onPress, disabled }, React.createElement(Text, null, title)),
   };

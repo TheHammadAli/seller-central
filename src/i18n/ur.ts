@@ -742,7 +742,7 @@ const ur: Record<string, string> = {
   'Click rate': 'کلک ریٹ',
   'spent brought': 'خرچ کرنے پر',
   'in sales.': 'کی سیل ہوئی۔',
-  'by Fazl': 'فضل کی طرف سے',
+  'by Leads Cooperate LLC': 'Leads Cooperate LLC کی طرف سے',
 
   // Notifications and settings
   'New orders, and likes and offers on your listings, show up here.': 'نئے آرڈرز، اور آپ کی لسٹنگز پر لائکس اور آفرز یہاں نظر آتی ہیں۔',
@@ -1044,6 +1044,12 @@ Object.assign(ur, {
   'Change phone': 'فون نمبر تبدیل کریں',
   'Invalid or expired verification code': 'تصدیقی کوڈ غلط ہے یا اس کی مدت ختم ہو چکی ہے',
   'Add photo (optional)': 'تصویر شامل کریں (اختیاری)',
+  'Your account is ready': 'آپ کا اکاؤنٹ تیار ہے',
+  'Verify your email': 'اپنی ای میل کی تصدیق کریں',
+  'Verify your phone': 'اپنے فون نمبر کی تصدیق کریں',
+  'Your details': 'آپ کی تفصیلات',
+  Continue: 'جاری رکھیں',
+  "Didn't get the code?": 'کوڈ نہیں ملا؟',
 });
 
 export default ur;
