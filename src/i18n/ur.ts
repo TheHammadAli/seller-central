@@ -993,18 +993,6 @@ const ur: Record<string, string> = {
     '{amount} ادا کرنے کے لیے کارڈ والے صفحے پر اپنے کارڈ کی تفصیلات درج کریں۔ جاز کیش کی تصدیق کے بعد یہ آگے بڑھ جائے گا۔',
   // Editing a shop: its category stays the one it was created with.
   "A shop's category can't be changed after it's created.": 'دکان بننے کے بعد اس کی کیٹیگری تبدیل نہیں کی جا سکتی۔',
-  // Posting a shop video by its link (YouTube, TikTok, Instagram, Facebook).
-  "Upload video": "ویڈیو اپ لوڈ کریں",
-  "Paste link": "لنک پیسٹ کریں",
-  "Video link": "ویڈیو کا لنک",
-  "YouTube, TikTok, Instagram or Facebook video link": "یوٹیوب، ٹک ٹاک، انسٹاگرام یا فیس بک ویڈیو کا لنک",
-  "Check link": "لنک چیک کریں",
-  "The video plays in its own platform's player on Fazl. Only public videos work.": "ویڈیو فضل پر اپنے پلیٹ فارم کے پلیئر میں چلے گی۔ صرف پبلک ویڈیوز چلتی ہیں۔",
-  "Change link": "لنک تبدیل کریں",
-  "This is my video, or I have the right to share it": "یہ میری ویڈیو ہے، یا مجھے اسے شیئر کرنے کا حق ہے",
-  "Please confirm you have the right to share this video.": "براہ کرم تصدیق کریں کہ آپ کو یہ ویڈیو شیئر کرنے کا حق ہے۔",
-  "Paste a video link and check it first.": "پہلے ویڈیو کا لنک پیسٹ کر کے چیک کریں۔",
-  "We couldn't check this link. Please try again.": "ہم یہ لنک چیک نہیں کر سکے۔ براہ کرم دوبارہ کوشش کریں۔",
 };
 
 export default ur;

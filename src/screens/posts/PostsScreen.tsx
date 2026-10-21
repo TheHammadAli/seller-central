@@ -1,8 +1,7 @@
 import { Clapperboard, Play, Plus, Trash2 } from 'lucide-react-native';
 import React from 'react';
-import { Alert, FlatList, Image, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import Video from 'react-native-video';
-import { SocialVideo } from '../../types/models';
 import { deleteShopVideo, listShopProducts, listShopVideos } from '../../api/shopContent';
 import { AppText, Badge, Card, EmptyState, Header, Screen, StateView, Thumb } from '../../components';
 import { useLoad } from '../../hooks/useLoad';
@@ -93,10 +92,7 @@ export function PostsScreen({ navigation }: RootScreenProps<'Posts'>) {
             <Card style={styles.card}>
               <VideoTile
                 uri={item.media[0]}
-                embed={item.embed}
-                onPress={() =>
-                  navigation.navigate('VideoPlayer', { uri: item.media[0], title: item.caption, embed: item.embed })
-                }
+                onPress={() => navigation.navigate('VideoPlayer', { uri: item.media[0], title: item.caption })}
               />
               <View style={styles.flex}>
                 <View style={styles.topRow}>
@@ -127,32 +123,8 @@ export function PostsScreen({ navigation }: RootScreenProps<'Posts'>) {
  * The video's first frame with a play badge (as on the Fazl app's shop page);
  * tapping it plays the video. A post with no video file shows the icon alone.
  */
-const PROVIDER_NAMES: Record<SocialVideo['provider'], string> = {
-  youtube: 'YouTube',
-  tiktok: 'TikTok',
-  instagram: 'Instagram',
-  facebook: 'Facebook',
-};
-
-function VideoTile({ uri, embed, onPress }: { uri?: string; embed?: SocialVideo; onPress: () => void }) {
+function VideoTile({ uri, onPress }: { uri?: string; onPress: () => void }) {
   if (!uri) return <Thumb icon={Clapperboard} size={TILE} />;
-  // Posted by link: its picture, or its platform's name.
-  if (embed) {
-    return (
-      <Pressable onPress={onPress} style={styles.tile} accessibilityRole="button" accessibilityLabel={t('Play video')}>
-        {embed.thumbnailUrl ? (
-          <Image source={{ uri: embed.thumbnailUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : (
-          <AppText variant="small" color={colors.white}>
-            {PROVIDER_NAMES[embed.provider]}
-          </AppText>
-        )}
-        <View style={styles.playBadge} pointerEvents="none">
-          <Play size={16} color={colors.white} fill={colors.white} />
-        </View>
-      </Pressable>
-    );
-  }
   return (
     <Pressable
       onPress={onPress}

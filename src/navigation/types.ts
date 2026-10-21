@@ -1,7 +1,7 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { CoinMethod } from '../api/coins';
-import { PostType, TeamMember, TeamMemberRole, SocialVideo } from '../types/models';
+import { PostType, TeamMember, TeamMemberRole } from '../types/models';
 
 export type TabParamList = {
   Home: undefined;
@@ -41,9 +41,8 @@ export type RootStackParamList = {
   Inventory: { filter?: 'low' | 'out' } | undefined;
   AddPost: { type?: PostType } | undefined;
   Posts: undefined;
-  /** A video played full screen: a posted one's URL, or a picked file's.
-   *  `embed`: a video posted by link, played in its platform's own player. */
-  VideoPlayer: { uri: string; title?: string; embed?: SocialVideo };
+  /** A video played full screen: a posted one's URL, or a picked file's. */
+  VideoPlayer: { uri: string; title?: string };
   Ads: undefined;
   CampaignForm: { campaignId?: string } | undefined;
   CampaignDetail: { campaignId: string };

@@ -221,26 +221,11 @@ export interface Rider {
 /** A shop's feed post. Products are listed through the product form instead. */
 export type PostType = 'video';
 
-/** A video posted by link (YouTube, TikTok, Instagram, Facebook): played in
- *  that platform's own player, nothing copied into Fazl. */
-export interface SocialVideo {
-  provider: 'youtube' | 'tiktok' | 'instagram' | 'facebook';
-  videoId: string;
-  sourceUrl: string;
-  embedUrl: string;
-  thumbnailUrl?: string | null;
-  title?: string | null;
-  authorName?: string | null;
-  vertical?: boolean;
-}
-
 export interface Post {
   id: string;
   type: PostType;
   caption: string;
   media: string[];
-  /** Posted by link: its platform's video (media[0] is that player). */
-  embed?: SocialVideo;
   /** The product tagged in the video, if any. */
   productId?: string;
   productTitle?: string;

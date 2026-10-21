@@ -1,23 +1,17 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Check, Clapperboard, Info, Link2, PackagePlus, Play, X } from 'lucide-react-native';
+import { Clapperboard, Info, PackagePlus, Play, X } from 'lucide-react-native';
 import { ChevronForward } from '../../components/Chevrons';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { createVideoThumbnail } from 'react-native-compressor';
 import { launchImageLibrary } from 'react-native-image-picker';
-import {
-  listShopProducts,
-  postShopVideo,
-  postShopVideoLink,
-  previewSocialVideo,
-  UploadFile,
-} from '../../api/shopContent';
-import { AppText, Button, Card, Header, IconCircle, Screen, Segmented, TextField, Thumb } from '../../components';
+import { listShopProducts, postShopVideo, UploadFile } from '../../api/shopContent';
+import { AppText, Button, Card, Header, IconCircle, Screen, TextField, Thumb } from '../../components';
 import { RootScreenProps, RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
 import { colors, radius, spacing, themedStyles } from '../../theme';
-import { Product, SocialVideo } from '../../types/models';
+import { Product } from '../../types/models';
 import { prepareVideo, VideoTooLongError } from '../../utils/videoCompression';
 import { t } from '../../i18n';
 
@@ -64,21 +58,10 @@ export function AddPostScreen({ route, navigation }: RootScreenProps<'AddPost'>)
   return <VideoPostForm canChangeType={route.params?.type !== 'video'} onChangeType={() => setVideo(false)} />;
 }
 
-const PROVIDER_NAMES: Record<SocialVideo['provider'], string> = {
-  youtube: 'YouTube',
-  tiktok: 'TikTok',
-  instagram: 'Instagram',
-  facebook: 'Facebook',
-};
-
 /**
  * The Fazl app's shop "Post video" (Native-fazl-app PostVideoScreen): the video
  * is compressed as soon as it's picked, then a caption and an optional tagged
  * product — same fields, rules and messages.
- *
- * Or, as there, the link of a public YouTube, TikTok, Instagram or Facebook
- * video: checked first, then posted to play in that platform's own player once
- * the owner says it's theirs to share.
  */
 function VideoPostForm({ canChangeType, onChangeType }: { canChangeType: boolean; onChangeType: () => void }) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -90,12 +73,6 @@ function VideoPostForm({ canChangeType, onChangeType }: { canChangeType: boolean
   const [products, setProducts] = useState<Product[]>([]);
   const [taggedId, setTaggedId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  // 'upload' a file, or 'link' to a video on YouTube / TikTok / Instagram / Facebook.
-  const [mode, setMode] = useState<'upload' | 'link'>('upload');
-  const [linkText, setLinkText] = useState('');
-  const [checkingLink, setCheckingLink] = useState(false);
-  const [linkVideo, setLinkVideo] = useState<SocialVideo | null>(null);
-  const [rightsConfirmed, setRightsConfirmed] = useState(false);
 
   // The shop's own live products, for the optional tag.
   useEffect(() => {
@@ -139,61 +116,8 @@ function VideoPostForm({ canChangeType, onChangeType }: { canChangeType: boolean
     }
   };
 
-  const checkLink = async () => {
-    if (checkingLink || submitting) return;
-    if (!linkText.trim()) {
-      Alert.alert(t('Error'), t('Paste a video link and check it first.'));
-      return;
-    }
-    setCheckingLink(true);
-    try {
-      const found = await previewSocialVideo(linkText.trim());
-      setLinkVideo(found);
-      setRightsConfirmed(false);
-      // YouTube gives the video's title: a starting caption to edit.
-      if (!caption.trim() && found.title) setCaption(found.title);
-    } catch (e) {
-      Alert.alert(t('Error'), e instanceof Error && e.message ? e.message : t("We couldn't check this link. Please try again."));
-    } finally {
-      setCheckingLink(false);
-    }
-  };
-
-  const submitLink = async () => {
-    if (!linkVideo) {
-      Alert.alert(t('Error'), t('Paste a video link and check it first.'));
-      return;
-    }
-    if (!caption.trim()) {
-      Alert.alert(t('Error'), t('Please add a caption'));
-      return;
-    }
-    if (!rightsConfirmed) {
-      Alert.alert(t('Error'), t('Please confirm you have the right to share this video.'));
-      return;
-    }
-    if (!shop) return;
-    setSubmitting(true);
-    try {
-      await postShopVideoLink(shop.id, {
-        url: linkVideo.sourceUrl,
-        caption: caption.trim(),
-        taggedProductId: taggedId ?? undefined,
-      });
-      Alert.alert(t('Success'), t('Video posted successfully'));
-      navigation.replace('Posts');
-    } catch (e) {
-      Alert.alert(t('Error'), e instanceof Error && e.message ? e.message : t('Failed to post video. Please try again.'));
-      setSubmitting(false);
-    }
-  };
-
   const submit = async () => {
     if (compressing !== null || submitting) return;
-    if (mode === 'link') {
-      await submitLink();
-      return;
-    }
     if (!video) {
       Alert.alert(t('Error'), t('Please select a video'));
       return;
@@ -234,96 +158,14 @@ function VideoPostForm({ canChangeType, onChangeType }: { canChangeType: boolean
       }
       footer={
         <Button
-          title={submitting && mode === 'upload' ? t('Uploading video...') : t('Post video')}
+          title={submitting ? t('Uploading video...') : t('Post video')}
           flex
-          loading={submitting && mode === 'link'}
-          disabled={submitting || compressing !== null || checkingLink}
+          disabled={submitting || compressing !== null}
           onPress={submit}
         />
       }
     >
-      <View style={styles.modes}>
-        <Segmented
-          options={[
-            { key: 'upload', label: t('Upload video') },
-            { key: 'link', label: t('Paste link') },
-          ]}
-          value={mode}
-          onChange={setMode}
-        />
-      </View>
-
-      {mode === 'link' ? (
-        linkVideo ? (
-          <View style={styles.linkBlock}>
-            <View style={styles.linkPreview}>
-              <View style={styles.linkPoster}>
-                {linkVideo.thumbnailUrl ? (
-                  <Image source={{ uri: linkVideo.thumbnailUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                ) : (
-                  <AppText variant="small" color={colors.white}>
-                    {PROVIDER_NAMES[linkVideo.provider]}
-                  </AppText>
-                )}
-              </View>
-              <View style={styles.flex}>
-                <AppText variant="label" color={colors.primary}>
-                  ▶ {PROVIDER_NAMES[linkVideo.provider]}
-                </AppText>
-                {linkVideo.title ? (
-                  <AppText variant="bodyBold" numberOfLines={2}>
-                    {linkVideo.title}
-                  </AppText>
-                ) : null}
-                {linkVideo.authorName ? (
-                  <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
-                    {linkVideo.authorName}
-                  </AppText>
-                ) : null}
-                <Pressable
-                  onPress={() => {
-                    setLinkVideo(null);
-                    setRightsConfirmed(false);
-                  }}
-                  hitSlop={8}
-                >
-                  <AppText variant="label" color={colors.primary} style={styles.linkChange}>
-                    {t('Change link')}
-                  </AppText>
-                </Pressable>
-              </View>
-            </View>
-            <Pressable onPress={() => setRightsConfirmed(v => !v)} style={styles.rightsRow} accessibilityRole="checkbox" accessibilityState={{ checked: rightsConfirmed }}>
-              <View style={[styles.checkbox, rightsConfirmed && styles.checkboxOn]}>
-                {rightsConfirmed ? <Check size={14} color={colors.white} /> : null}
-              </View>
-              <AppText style={styles.flex}>{t('This is my video, or I have the right to share it')}</AppText>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.linkBlock}>
-            <TextField
-              label={t('Video link')}
-              value={linkText}
-              onChangeText={setLinkText}
-              placeholder={t('YouTube, TikTok, Instagram or Facebook video link')}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-            />
-            <Button
-              title={t('Check link')}
-              variant="outline"
-              icon={Link2}
-              loading={checkingLink}
-              onPress={checkLink}
-            />
-            <AppText variant="caption" color={colors.textMuted}>
-              {t("The video plays in its own platform's player on Fazl. Only public videos work.")}
-            </AppText>
-          </View>
-        )
-      ) : compressing !== null ? (
+      {compressing !== null ? (
         <View style={[styles.picker, styles.pickerBusy]}>
           <ActivityIndicator color={colors.primary} />
           <AppText variant="bodyBold">{t('Compressing video...')}</AppText>
@@ -451,37 +293,6 @@ const styles = themedStyles(() => StyleSheet.create({
     justifyContent: 'center',
   },
   caption: { marginBottom: spacing.lg },
-  modes: { marginBottom: spacing.lg },
-  linkBlock: { gap: spacing.sm, marginBottom: spacing.lg },
-  linkPreview: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    padding: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  linkPoster: {
-    width: 84,
-    height: 112,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-    backgroundColor: '#1F2937',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  linkChange: { marginTop: spacing.xs, textDecorationLine: 'underline' },
-  rightsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   label: { marginBottom: spacing.sm },
   tags: { gap: spacing.sm, paddingBottom: spacing.sm },
   tag: {
