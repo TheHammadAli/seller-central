@@ -2,7 +2,7 @@
 // app's shop page uses ("List product", "Post video"), so whatever is posted
 // here shows up in that shop on Fazl straight away, and the other way round.
 import { Image } from 'react-native';
-import { ListingType, Post, Product, Shop, VariationOption } from '../types/models';
+import { ListingType, Post, Product, Shop, VariationOption, SocialVideo } from '../types/models';
 import { CategoryWithParameters } from '../utils/categoryParameters';
 import { api, ApiError } from './http';
 import { LocalizedName, nameOf } from './session';
@@ -22,6 +22,8 @@ interface BackendProduct {
   price?: number | null;
   images?: string[] | null;
   video?: string | null;
+  /** Posted by link: its platform's video. */
+  videoEmbed?: SocialVideo | null;
   categoryId?: string | null;
   category?: { id?: string; name?: LocalizedName } | null;
   parameters?: unknown;
@@ -322,6 +324,7 @@ export async function listShopVideos(shopId: string): Promise<Post[]> {
       type: 'video' as const,
       caption: p.title,
       media: p.video ? [p.video] : [],
+      embed: p.videoEmbed ?? undefined,
       productId: typeof tagged === 'string' ? tagged : tagged?.id,
       productTitle: typeof tagged === 'object' ? tagged?.title : undefined,
       isListing: !p.isVideoPost,
@@ -339,6 +342,29 @@ export async function postShopVideo(
   form.append('video', v.video as unknown as Blob);
   if (v.taggedProductId) form.append('taggedProductId', v.taggedProductId);
   await api(`/video-posts/${shopId}`, { method: 'POST', form });
+}
+
+/** A pasted YouTube / TikTok / Instagram / Facebook link, checked before posting:
+ *  the platform, the video, its player, and (YouTube) title and picture. */
+export async function previewSocialVideo(url: string): Promise<SocialVideo> {
+  return api<SocialVideo>('/social-video/preview', { method: 'POST', body: { url } });
+}
+
+/** A shop video posted by its link — played in its platform's own player. The
+ *  owner has said it's theirs to share. */
+export async function postShopVideoLink(
+  shopId: string,
+  v: { url: string; caption: string; taggedProductId?: string },
+): Promise<void> {
+  await api(`/video-posts/${shopId}/link`, {
+    method: 'POST',
+    body: {
+      url: v.url,
+      title: v.caption,
+      confirmRights: true,
+      ...(v.taggedProductId ? { taggedProductId: v.taggedProductId } : {}),
+    },
+  });
 }
 
 export async function deleteShopVideo(postId: string): Promise<void> {
