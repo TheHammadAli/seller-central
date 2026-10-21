@@ -991,6 +991,8 @@ const ur: Record<string, string> = {
   'Card payment': 'کارڈ سے ادائیگی',
   "Enter your card's details on the card page to pay {amount}. This moves on once JazzCash confirms it.":
     '{amount} ادا کرنے کے لیے کارڈ والے صفحے پر اپنے کارڈ کی تفصیلات درج کریں۔ جاز کیش کی تصدیق کے بعد یہ آگے بڑھ جائے گا۔',
+  // Editing a shop: its category stays the one it was created with.
+  "A shop's category can't be changed after it's created.": 'دکان بننے کے بعد اس کی کیٹیگری تبدیل نہیں کی جا سکتی۔',
 };
 
 export default ur;
