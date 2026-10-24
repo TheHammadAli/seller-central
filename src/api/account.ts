@@ -42,12 +42,14 @@ export function validSignupPassword(password: string): boolean {
 }
 
 /**
- * Deletes the owner's Fazl account — the one shared with the Fazl app — the
- * way the Fazl app's Settings does: the account, its shops and its listings are
- * taken off Fazl. A team member's session can't (the backend refuses it).
+ * Closes the owner's Seller Central account and leaves their Fazl app account
+ * as it is: their shops and the listings in them are taken off Fazl, the team
+ * loses access, and every Seller Central login ends. Logging in again (with
+ * the emailed code) opens it afresh. A team member's session can't (the
+ * backend refuses it).
  */
-export async function deleteAccount(userId: string): Promise<void> {
-  await api(`/users/${encodeURIComponent(userId)}/deactivate`, { method: 'DELETE' });
+export async function deleteAccount(): Promise<void> {
+  await api('/seller/session/account', { method: 'DELETE' });
 }
 
 /** Same account and endpoint as the Fazl app, followed by a normal app login. */
