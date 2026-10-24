@@ -766,9 +766,9 @@ const ur: Record<string, string> = {
   'Delete account': 'اکاؤنٹ حذف کریں',
   'Delete Seller Central account': 'سیلر سینٹرل اکاؤنٹ حذف کریں',
   'Delete your Seller Central account?': 'اپنا سیلر سینٹرل اکاؤنٹ حذف کریں؟',
-  'Your shops and their listings are taken off Fazl, your team loses access, and you are logged out. Your Fazl app account stays as it is. To sell here again, log in and verify your email with a code.':
-    'آپ کی دکانیں اور ان کی لسٹنگز فضل سے ہٹا دی جائیں گی، آپ کی ٹیم کی رسائی ختم ہو جائے گی اور آپ لاگ آؤٹ ہو جائیں گے۔ آپ کا فضل ایپ اکاؤنٹ ویسا ہی رہے گا۔ یہاں دوبارہ فروخت کے لیے لاگ ان کریں اور کوڈ سے اپنی ای میل کی تصدیق کریں۔',
-  'Your shops and listings. Your Fazl app account stays.': 'آپ کی دکانیں اور لسٹنگز۔ آپ کا فضل ایپ اکاؤنٹ رہے گا۔',
+  'The listings and posts you added here are deleted, and so is a shop with nothing from the Fazl app in it. A shop with Fazl app listings stays, with those. Your team loses access and you are logged out. Your Fazl app account stays as it is. To sell here again, log in and verify your email with a code.':
+    'یہاں شامل کی گئی آپ کی لسٹنگز اور پوسٹس حذف ہو جائیں گی، اور وہ دکان بھی جس میں فضل ایپ کی کوئی لسٹنگ نہیں۔ جس دکان میں فضل ایپ کی لسٹنگز ہیں وہ ان کے ساتھ رہے گی۔ آپ کی ٹیم کی رسائی ختم ہو جائے گی اور آپ لاگ آؤٹ ہو جائیں گے۔ آپ کا فضل ایپ اکاؤنٹ ویسا ہی رہے گا۔ یہاں دوبارہ فروخت کے لیے لاگ ان کریں اور کوڈ سے اپنی ای میل کی تصدیق کریں۔',
+  'Your listings and posts here. Your Fazl app account stays.': 'یہاں کی آپ کی لسٹنگز اور پوسٹس۔ آپ کا فضل ایپ اکاؤنٹ رہے گا۔',
   'Deleting…': 'حذف کیا جا رہا ہے…',
   "Couldn't delete your account": 'آپ کا اکاؤنٹ حذف نہیں ہو سکا',
 

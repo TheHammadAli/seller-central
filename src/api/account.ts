@@ -43,9 +43,11 @@ export function validSignupPassword(password: string): boolean {
 
 /**
  * Closes the owner's Seller Central account and leaves their Fazl app account
- * as it is: their shops and the listings in them are taken off Fazl, the team
- * loses access, and every Seller Central login ends. Logging in again (with
- * the emailed code) opens it afresh. A team member's session can't (the
+ * as it is: the listings and posts added here are deleted, and so is a shop
+ * with nothing from the Fazl app in it (one with Fazl app listings stays);
+ * the team loses access, and every Seller Central login ends. Logging in
+ * again (with the emailed code) opens it afresh — with a shop that stayed,
+ * or the "create your shop" screen. A team member's session can't (the
  * backend refuses it).
  */
 export async function deleteAccount(): Promise<void> {

@@ -40,7 +40,7 @@ export function SettingsScreen() {
     Alert.alert(
       t('Delete your Seller Central account?'),
       t(
-        'Your shops and their listings are taken off Fazl, your team loses access, and you are logged out. Your Fazl app account stays as it is. To sell here again, log in and verify your email with a code.',
+        'The listings and posts you added here are deleted, and so is a shop with nothing from the Fazl app in it. A shop with Fazl app listings stays, with those. Your team loses access and you are logged out. Your Fazl app account stays as it is. To sell here again, log in and verify your email with a code.',
       ),
       [
         { text: t('Cancel'), style: 'cancel' },
@@ -206,7 +206,7 @@ export function SettingsScreen() {
             icon={Trash2}
             tone="danger"
             title={deleting ? t('Deleting…') : t('Delete Seller Central account')}
-            subtitle={t('Your shops and listings. Your Fazl app account stays.')}
+            subtitle={t('Your listings and posts here. Your Fazl app account stays.')}
             onPress={deleting ? undefined : confirmDeleteAccount}
           />
         ) : null}
