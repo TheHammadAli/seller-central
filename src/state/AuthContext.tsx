@@ -43,8 +43,8 @@ interface AuthState {
   splashDone: (id: number) => void;
   /**
    * A password login waiting for its code: `to` is where it went (by email,
-   * or by SMS for a phone login), `email` the account's, `identifier` what
-   * was typed (to send a new code the same way).
+   * or by SMS for a phone login), `identifier` the email or phone number
+   * typed, which the code is checked with and a new code is sent the same way.
    */
   pendingLogin: (LoginCodeSent & { identifier: string }) | null;
   /** Checks the email (or phone number) and password and sends a code; signs in at verifyLoginCode. */
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       verifyLoginCode: async code => {
         if (!pendingLogin) throw new Error('Log in first');
-        await signedIn(await loginWithCode(pendingLogin.email, code, startHome));
+        await signedIn(await loginWithCode(pendingLogin.identifier, code, startHome));
         endPendingLogin();
       },
       resendLoginCode: async () => {

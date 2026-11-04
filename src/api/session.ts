@@ -182,11 +182,10 @@ async function sellerSessionStarted(data: SellerSession, onLastShop?: OnLastShop
   return ownerSignedIn(data.user, onLastShop);
 }
 
-/** Where a login code went: `email` is the account's, which loginWithCode takes. */
+/** Where a login code went. */
 export interface LoginCodeSent {
-  email: string;
   sentTo: 'email' | 'phone';
-  /** Shown to the user: the email, or the phone number partly hidden. */
+  /** Shown to the user: the email typed, else the address or number partly hidden. */
   to: string;
 }
 
@@ -207,8 +206,7 @@ export async function requestLoginCode(emailOrPhone: string, password: string): 
     body: byPhone ? { phone: pakistanPhone(value), password } : { email: value, password },
     auth: false,
   });
-  const email = data?.email ?? value;
-  return { email, sentTo: data?.sentTo ?? 'email', to: data?.to ?? email };
+  return { sentTo: data?.sentTo ?? 'email', to: data?.to ?? value };
 }
 
 /**
@@ -225,13 +223,15 @@ export async function signUpWithPass(signupPass: string, password: string, onLas
 }
 
 /**
- * The emailed code: opens Seller Central for the account — afresh, if the
- * owner had closed it — and logs in.
+ * The code that was sent: opens Seller Central for the account — afresh, if
+ * the owner had closed it — and logs in. `emailOrPhone`: what the login was
+ * started with (a phone login is never told the account's email).
  */
-export async function loginWithCode(email: string, code: string, onLastShop?: OnLastShop): Promise<Seller> {
+export async function loginWithCode(emailOrPhone: string, code: string, onLastShop?: OnLastShop): Promise<Seller> {
+  const value = emailOrPhone.trim();
   const data = await api<SellerSession>('/seller/session/verify', {
     method: 'POST',
-    body: { email, code: code.trim() },
+    body: looksLikePhone(value) ? { phone: pakistanPhone(value), code: code.trim() } : { email: value, code: code.trim() },
     auth: false,
   });
   return sellerSessionStarted(data, onLastShop);

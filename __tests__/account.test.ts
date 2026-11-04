@@ -38,7 +38,7 @@ test('deleting closes the Seller Central account only, not the Fazl app’s', as
 
 test('the password only gets a code emailed; the code logs in, in a session of its own', async () => {
   request.mockResolvedValueOnce({ email: 'ali@example.com', sentTo: 'email', to: 'ali@example.com', expiresInSeconds: 600 });
-  await expect(requestLoginCode(' ali@example.com ', 'secret12')).resolves.toEqual({ email: 'ali@example.com', sentTo: 'email', to: 'ali@example.com' });
+  await expect(requestLoginCode(' ali@example.com ', 'secret12')).resolves.toEqual({ sentTo: 'email', to: 'ali@example.com' });
   expect(request).toHaveBeenLastCalledWith('/seller/session/login', { method: 'POST', body: { email: 'ali@example.com', password: 'secret12' }, auth: false });
   expect(saveTokens).not.toHaveBeenCalled();
 
@@ -51,12 +51,12 @@ test('the password only gets a code emailed; the code logs in, in a session of i
 });
 
 test('a phone number logs in too: sent as the phone, and the code may go by SMS', async () => {
-  request.mockResolvedValueOnce({ email: 'ali@example.com', sentTo: 'phone', to: '+92 300 ***4567' });
-  await expect(requestLoginCode('0300 1234567', 'secret12')).resolves.toEqual({ email: 'ali@example.com', sentTo: 'phone', to: '+92 300 ***4567' });
+  request.mockResolvedValueOnce({ sentTo: 'phone', to: '+92 300 ***4567' });
+  await expect(requestLoginCode('0300 1234567', 'secret12')).resolves.toEqual({ sentTo: 'phone', to: '+92 300 ***4567' });
   expect(request).toHaveBeenLastCalledWith('/seller/session/login', { method: 'POST', body: { phone: '+923001234567', password: 'secret12' }, auth: false });
-  // The account's email is what the code is checked against.
-  await loginWithCode('ali@example.com', '123456');
-  expect(request).toHaveBeenCalledWith('/seller/session/verify', expect.objectContaining({ body: { email: 'ali@example.com', code: '123456' } }));
+  // The code is checked with the phone number too: a phone login never learns the account's email.
+  await loginWithCode('0300 1234567', '123456');
+  expect(request).toHaveBeenCalledWith('/seller/session/verify', expect.objectContaining({ body: { phone: '+923001234567', code: '123456' } }));
 });
 
 test('signup opens Seller Central with its pass, without a second code', async () => {
