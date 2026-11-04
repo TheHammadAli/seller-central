@@ -1,6 +1,7 @@
 // A shop's real products and videos on Fazl — the same endpoints the Fazl
 // app's shop page uses ("List product", "Post video"), so whatever is posted
 // here shows up in that shop on Fazl straight away, and the other way round.
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'react-native';
 import { ListingType, Post, Product, Shop, VariationOption } from '../types/models';
 import { CategoryWithParameters } from '../utils/categoryParameters';
@@ -135,23 +136,75 @@ interface BasicCategory {
   groupedCategoryIds?: string[];
 }
 
+/**
+ * Categories are kept on the phone: the list, and each category's details once
+ * chosen. They rarely change, so the listing form opens with the kept copy at
+ * once (rather than waiting a few seconds on the network for, say, Cars and
+ * its whole Make/Model list) while a fresh copy is fetched behind it, used for
+ * the rest of the session and kept for next time.
+ */
+const KEPT_LIST = 'categories:basic:v1';
+const keptDetailsKey = (id: string) => `categories:details:v1:${id}`;
+
+async function readKept<T>(key: string): Promise<T | undefined> {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The kept copy at once when there is one, else the network's. Either way a
+ * fresh copy is fetched and kept, and handed to `onFresh`.
+ */
+export function keptThenFresh<T>(
+  key: string,
+  fetchFresh: () => Promise<T>,
+  onFresh: (fresh: T) => void,
+): Promise<T> {
+  const fresh = fetchFresh().then(value => {
+    AsyncStorage.setItem(key, JSON.stringify(value)).catch(() => {});
+    onFresh(value);
+    return value;
+  });
+  return readKept<T>(key).then(kept => {
+    if (kept === undefined) return fresh;
+    fresh.catch(() => {}); // the kept copy stands in; next time tries again
+    return kept;
+  });
+}
+
 /** Every category without details (light), once per app session. */
 let basicCategoriesCache: Promise<BasicCategory[]> | null = null;
 
 function basicCategories(): Promise<BasicCategory[]> {
   if (!basicCategoriesCache) {
-    basicCategoriesCache = api<BasicCategory[]>('/categories?fields=basic')
-      .then(list => list ?? [])
-      .catch(e => {
-        basicCategoriesCache = null; // try again next time
-        throw e;
-      });
+    const loading = keptThenFresh(
+      KEPT_LIST,
+      () => api<BasicCategory[]>('/categories?fields=basic').then(list => list ?? []),
+      fresh => {
+        basicCategoriesCache = Promise.resolve(fresh);
+      },
+    );
+    loading.catch(() => {
+      if (basicCategoriesCache === loading) basicCategoriesCache = null; // try again next time
+    });
+    basicCategoriesCache = loading;
   }
   return basicCategoriesCache;
 }
 
 /** Each category's details once fetched, for the rest of the app session. */
 const detailsCache = new Map<string, Promise<CategoryWithParameters>>();
+
+interface CategoryDetailsResponse {
+  id?: string;
+  name: LocalizedName;
+  icon?: string | null;
+  parameters?: CategoryWithParameters['parameters'];
+}
 
 /**
  * One category with its details (parameters), fetched only when it is
@@ -161,24 +214,50 @@ const detailsCache = new Map<string, Promise<CategoryWithParameters>>();
 export function categoryDetails(id: string): Promise<CategoryWithParameters> {
   let found = detailsCache.get(id);
   if (!found) {
-    found = api<{
-      id?: string;
-      name: LocalizedName;
-      icon?: string | null;
-      parameters?: CategoryWithParameters['parameters'];
-    }>(`/categories/${encodeURIComponent(id)}`)
-      .then(c => ({ id: c?.id ?? id, name: nameOf(c?.name), icon: c?.icon, parameters: c?.parameters }))
-      .catch(async e => {
-        if (e instanceof ApiError && e.status === 404) {
-          const match = (await productCategoriesWithParameters()).find(c => c.id === id);
-          if (match) return match;
-        }
-        throw e;
-      });
-    found.catch(() => detailsCache.delete(id)); // try again next time
-    detailsCache.set(id, found);
+    // Kept as the backend sends it (both languages' names), named on reading.
+    const toDetails = (c: CategoryDetailsResponse): CategoryWithParameters => ({
+      id: c?.id ?? id,
+      name: nameOf(c?.name),
+      icon: c?.icon,
+      parameters: c?.parameters,
+    });
+    const loading = keptThenFresh(
+      keptDetailsKey(id),
+      () =>
+        api<CategoryDetailsResponse>(`/categories/${encodeURIComponent(id)}`).catch(async e => {
+          if (e instanceof ApiError && e.status === 404) {
+            const match = (await productCategoriesWithParameters()).find(c => c.id === id);
+            if (match) return match;
+          }
+          throw e;
+        }),
+      fresh => detailsCache.set(id, Promise.resolve(toDetails(fresh))),
+    ).then(toDetails);
+    loading.catch(() => {
+      if (detailsCache.get(id) === loading) detailsCache.delete(id); // try again next time
+    });
+    detailsCache.set(id, loading);
+    found = loading;
   }
   return found;
+}
+
+/** A shop with this many categories or fewer gets every one's details ahead. */
+const FEW_CATEGORIES = 8;
+
+/**
+ * The listing form's categories made ready before it opens (called once the
+ * shop is known): the shop's list with its icons and, for a shop with only a
+ * few categories (one of its own, or e.g. Vehicles' Cars and Motor Bikes),
+ * each one's details too.
+ */
+export function prepareShopCategories(shop: Shop) {
+  shopCategories(shop)
+    .then(({ categories }) => {
+      if (categories.length > FEW_CATEGORIES) return;
+      categories.forEach(c => categoryDetails(c.id).catch(() => {}));
+    })
+    .catch(() => {});
 }
 
 /**

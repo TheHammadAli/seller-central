@@ -3,6 +3,7 @@ import { preloadDashboard, preloadSavedDashboard, whenDashboardPreloaded } from 
 import { pickAppleIdentity } from '../api/apple';
 import { forgetGoogleAccount, pickGoogleAccount } from '../api/google';
 import { setSessionExpiredHandler } from '../api/http';
+import { prepareShopCategories } from '../api/shopContent';
 import {
   chooseShop,
   completeOwnerProfile,
@@ -150,6 +151,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         startup.resolve();
       });
   }, [startup]);
+
+  // The listing form's categories, ready before "Add product" is tapped.
+  const shopForCategories = seller?.shop;
+  useEffect(() => {
+    if (shopForCategories) prepareShopCategories(shopForCategories);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopForCategories?.id, shopForCategories?.categoryId]);
 
   const value = useMemo<AuthState>(() => {
     const showSplash = (reason: Splash['reason'], until: Promise<void>) =>
