@@ -30,7 +30,7 @@ export type TextVariant =
   | 'small';
 
 /** Urdu script sits taller than Latin, so its lines need more room. */
-const line = (height: number) => (urdu ? Math.round(height * 1.35) : height);
+export const line = (height: number) => (urdu ? Math.round(height * 1.35) : height);
 
 export const textVariants: Record<TextVariant, TextStyle> = {
   title: { fontFamily: fonts.black, fontSize: 24, lineHeight: line(30) },

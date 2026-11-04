@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { I18nManager, StyleSheet, TextInput, TextInputInstance, View } from 'react-native';
-import { colors, fonts, themedStyles } from '../theme';
+import { I18nManager, Pressable, StyleSheet, TextInput, TextInputInstance, View } from 'react-native';
+import { colors, fonts, line, themedStyles } from '../theme';
 import { AppText } from './AppText';
 
 /**
@@ -32,9 +32,23 @@ export function CodeBoxes({
   const [focused, setFocused] = useState(false);
   const digits = value.split('');
 
+  // iOS never hands a tap to a view it can't see (the field is at opacity 0),
+  // so a tap on the boxes reaches them instead and they bring the keyboard
+  // back. Still focused with the keyboard put away (Android's back button):
+  // blur first, or focusing would do nothing.
+  const focus = () => {
+    if (!editable) return;
+    if (input.current?.isFocused()) input.current.blur();
+    input.current?.focus();
+  };
+
   return (
     <View style={styles.wrap}>
-      <View style={[styles.row, I18nManager.isRTL && styles.leftToRight]}>
+      <Pressable
+        onPress={focus}
+        accessible={false}
+        style={[styles.row, I18nManager.isRTL && styles.leftToRight]}
+      >
         {Array.from({ length }, (_, i) => {
           // The box the next digit goes in (the last one once all are in).
           const current = focused && i === Math.min(digits.length, length - 1);
@@ -54,7 +68,7 @@ export function CodeBoxes({
             </View>
           );
         })}
-      </View>
+      </Pressable>
       <TextInput
         ref={input}
         value={value}
@@ -99,8 +113,11 @@ const styles = themedStyles(() =>
     filled: { borderColor: colors.primary, backgroundColor: colors.surface },
     current: { borderColor: colors.primary, borderWidth: 2, backgroundColor: colors.primarySoft },
     error: { borderColor: colors.danger },
-    digit: { fontFamily: fonts.bold, fontSize: 22, color: colors.text },
-    // Over the boxes, so a tap anywhere on them brings up the keyboard.
+    // Its own line height: AppText's body one (20) is shorter than the digit,
+    // and iOS cut the top off it.
+    digit: { fontFamily: fonts.bold, fontSize: 22, lineHeight: line(30), color: colors.text },
+    // Over the boxes, so a tap anywhere on them brings up the keyboard
+    // (on Android; on iOS the boxes take the tap, see `focus`).
     input: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, color: 'transparent' },
   }),
 );
