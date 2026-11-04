@@ -326,7 +326,7 @@ export function LoginScreen({ navigation }: RootScreenProps<'Login'>) {
           {/* Apple's own button, iPhone only (as in the Fazl app). */}
           {isAppleSignInAvailable ? (
             <AppleButton
-              buttonStyle={AppleButton.Style.BLACK}
+              buttonStyle={AppleButton.Style.WHITE}
               buttonType={AppleButton.Type.CONTINUE}
               cornerRadius={12}
               style={[styles.apple, loading !== null && styles.dimmed]}
