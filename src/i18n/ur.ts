@@ -255,6 +255,7 @@ const ur: Record<string, string> = {
   "You'll need to log in again to manage your shop.": 'اپنی دکان سنبھالنے کے لیے آپ کو دوبارہ لاگ ان کرنا ہوگا۔',
   'Logged in as': 'لاگ ان بطور',
   'Continue with Google': 'گوگل کے ساتھ جاری رکھیں',
+  'Continue with Apple': 'ایپل کے ساتھ جاری رکھیں',
   "Log in with your Fazl account. Don't have a shop yet? You can create one here after logging in.":
     'اپنے فضل اکاؤنٹ سے لاگ ان کریں۔ ابھی دکان نہیں ہے؟ لاگ ان کے بعد آپ یہاں بنا سکتے ہیں۔',
   'Enter a valid email': 'درست ای میل درج کریں',

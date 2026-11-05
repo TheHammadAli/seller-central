@@ -10,8 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppleButton } from '@invertase/react-native-apple-authentication';
 import { isAppleSignInAvailable } from '../../api/apple';
+import { AppleSignInButton } from '../../components/AppleSignInButton';
 import { looksLikePhone } from '../../api/session';
 import GoogleIcon from '../../assets/icons/google.png';
 import { AppText, DoodleButton, IconCircle, OutlinedField, Screen } from '../../components';
@@ -323,14 +323,15 @@ export function LoginScreen({ navigation }: RootScreenProps<'Login'>) {
             )}
           </TouchableOpacity>
 
-          {/* Apple's own button, iPhone only (as in the Fazl app). */}
+          {/* iPhone only: white, its title the size of Google's above. */}
           {isAppleSignInAvailable ? (
-            <AppleButton
-              buttonStyle={AppleButton.Style.WHITE}
-              buttonType={AppleButton.Type.CONTINUE}
-              cornerRadius={12}
-              style={[styles.apple, loading !== null && styles.dimmed]}
+            <AppleSignInButton
+              title={t('Continue with Apple')}
               onPress={apple}
+              disabled={loading !== null}
+              loading={loading === 'apple'}
+              style={[styles.google, styles.apple]}
+              textStyle={styles.googleText}
             />
           ) : null}
         </>
@@ -425,8 +426,7 @@ const styles = themedStyles(() => StyleSheet.create({
     gap: 12,
   },
   googleIcon: { width: 22, height: 22 },
-  apple: { width: '100%', height: 56, marginTop: spacing.md },
-  dimmed: { opacity: 0.6 },
+  apple: { marginTop: spacing.md },
   googleText: { fontFamily: fonts.bold, fontSize: 16, color: colors.text },
   note: { marginTop: spacing.xl },
 }));

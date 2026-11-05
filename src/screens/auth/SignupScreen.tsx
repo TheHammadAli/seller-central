@@ -1,8 +1,8 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { CircleCheck, KeyRound, Languages, Lock, ShieldCheck, UserPlus, UserRound } from 'lucide-react-native';
-import { AppleButton } from '@invertase/react-native-apple-authentication';
 import { isAppleSignInAvailable } from '../../api/apple';
+import { AppleSignInButton } from '../../components/AppleSignInButton';
 import GoogleIcon from '../../assets/icons/google.png';
 import { createFazlAccount, sendSignupCode, verifySignupCode, sendPhoneSignupCode, verifyPhoneSignupCode, validSignupPassword } from '../../api/account';
 import { AppText, CodeBoxes, DoodleButton, IconCircle, OutlinedField, Screen } from '../../components';
@@ -38,6 +38,7 @@ export function SignupScreen({ navigation }: RootScreenProps<'Signup'>) {
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [usingGoogle, setUsingGoogle] = useState(false);
+  const [usingApple, setUsingApple] = useState(false);
   const [created, setCreated] = useState(false);
   const [error, setError] = useState('');
   const [resendAfter, setResendAfter] = useState(0);
@@ -110,10 +111,10 @@ export function SignupScreen({ navigation }: RootScreenProps<'Signup'>) {
   // iPhone only: Apple has verified the email, so the account is created and opened at once.
   const apple = async () => {
     if (loading) return;
-    setLoading(true); setError('');
+    setLoading(true); setUsingApple(true); setError('');
     try { await signInWithApple(true); }
     catch (e) { setError(e instanceof Error ? e.message : t('Apple sign-in failed')); }
-    finally { setLoading(false); }
+    finally { setLoading(false); setUsingApple(false); }
   };
   const back = () => {
     setError('');
@@ -225,14 +226,15 @@ export function SignupScreen({ navigation }: RootScreenProps<'Signup'>) {
             )}
           </TouchableOpacity>
 
-          {/* Apple's own button, iPhone only (as on Login and in the Fazl app). */}
+          {/* iPhone only: white, its title the size of Google's above (as on Login). */}
           {isAppleSignInAvailable ? (
-            <AppleButton
-              buttonStyle={AppleButton.Style.WHITE}
-              buttonType={AppleButton.Type.CONTINUE}
-              cornerRadius={12}
-              style={[styles.apple, loading && styles.dimmed]}
+            <AppleSignInButton
+              title={t('Continue with Apple')}
               onPress={apple}
+              disabled={loading}
+              loading={usingApple}
+              style={[styles.google, styles.apple]}
+              textStyle={styles.googleText}
             />
           ) : null}
         </>
@@ -291,7 +293,6 @@ const styles = themedStyles(() => StyleSheet.create({
   googleIcon: { width: 22, height: 22 },
   googleText: { fontFamily: fonts.bold, fontSize: 16, color: colors.text },
   // Login's Apple button.
-  apple: { width: '100%', height: 56, marginTop: spacing.md },
-  dimmed: { opacity: 0.6 },
+  apple: { marginTop: spacing.md },
   loginRow: { alignSelf: 'center', marginTop: spacing.xl, marginBottom: spacing.lg },
 }));
