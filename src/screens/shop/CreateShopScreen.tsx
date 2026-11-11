@@ -187,10 +187,6 @@ export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateS
     const found = validate();
     setErrors(found);
     if (Object.keys(found).length) return;
-    if (terms && !terms.canCreate) {
-      Alert.alert(t('Shop limit reached'), t('You can have up to {count} shops on Fazl, counting ones waiting for approval.', { count: terms.maxShops }));
-      return;
-    }
     // Another shop's fee: the payment page (wallet, JazzCash, Easypaisa or
     // card). It comes back here once paid, and the shop is sent then.
     if (extra && fee > 0) {
@@ -293,7 +289,7 @@ export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateS
           flex
           loading={saving}
           loadingText={extra ? t('Sending') : t('Creating')}
-          disabled={saving || terms?.canCreate === false}
+          disabled={saving}
           onPress={save}
         />
       }
@@ -313,11 +309,7 @@ export function CreateShopScreen({ navigation, route }: RootScreenProps<'CreateS
               </AppText>
             </View>
           </View>
-          {!terms.canCreate ? (
-            <AppText variant="label" color={colors.danger}>
-              {t('You can have up to {count} shops on Fazl, counting ones waiting for approval.', { count: terms.maxShops })}
-            </AppText>
-          ) : fee > 0 ? (
+          {fee > 0 ? (
             <View style={styles.feeRow}>
               <View style={styles.flex}>
                 <AppText variant="label" color={colors.textMuted}>

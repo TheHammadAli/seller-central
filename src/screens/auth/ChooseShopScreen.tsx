@@ -26,8 +26,6 @@ import { confirmLogout } from '../../utils/confirmLogout';
 import { Shop } from '../../types/models';
 import { t } from '../../i18n';
 
-/** The backend's limit (MAX_SHOPS_PER_OWNER), counting shops waiting for approval. */
-const MAX_SHOPS = 3;
 /** A turned-down request stays listed this long, so its reason can be read. */
 const REJECTED_SHOWN_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -133,9 +131,9 @@ function ShopPicker({ switching }: { switching: boolean }) {
   const refused = requests.filter(
     r => r.status === 'rejected' && Date.now() - new Date(r.reviewedAt ?? r.createdAt).getTime() < REJECTED_SHOWN_MS,
   );
-  // Fazl allows an account 3 shops that aren't suspended, counting ones
-  // waiting for approval. Team members cannot create shops.
-  const canCreate = isOwner && shops.length + waiting.length < MAX_SHOPS;
+  // An owner may have any number of shops: the first is free, each one after
+  // it paid for and approved. Team members cannot create shops.
+  const canCreate = isOwner;
 
   return (
     <Screen

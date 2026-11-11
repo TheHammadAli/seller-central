@@ -13,10 +13,6 @@ export interface NewShopTerms {
   balance: number;
   walletFrozen: boolean;
   walletEnabled: boolean;
-  /** Open shops plus those waiting for approval, against `maxShops`. */
-  shopCount: number;
-  maxShops: number;
-  canCreate: boolean;
   /** As the backend gave it, sent back when creating the shop. */
   feeMinor: number;
 }
@@ -42,9 +38,6 @@ interface BackendTerms {
   balanceMinor: number;
   walletFrozen: boolean;
   walletEnabled: boolean;
-  shopCount: number;
-  maxShops: number;
-  canCreate: boolean;
 }
 
 interface BackendRequest {
@@ -67,9 +60,6 @@ export async function getNewShopTerms(): Promise<NewShopTerms> {
     balance: t.balanceMinor / 100,
     walletFrozen: t.walletFrozen,
     walletEnabled: t.walletEnabled,
-    shopCount: t.shopCount,
-    maxShops: t.maxShops,
-    canCreate: t.canCreate,
     feeMinor: t.feeMinor,
   };
 }

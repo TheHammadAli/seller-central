@@ -972,9 +972,6 @@ const ur: Record<string, string> = {
     'تفصیلات چیک کر لیں: فضل آپ کی رقم بالکل اسی اکاؤنٹ میں بھیجے گا۔ اکاؤنٹ آپ کے اپنے نام پر ہونا چاہیے۔',
 
   // Another shop: its fee, Fazl's approval, and adding coins to pay for it.
-  'Shop limit reached': 'دکانوں کی حد پوری ہو گئی',
-  'You can have up to {count} shops on Fazl, counting ones waiting for approval.':
-    'فضل پر آپ کی زیادہ سے زیادہ {count} دکانیں ہو سکتی ہیں، منظوری کی منتظر دکانوں سمیت۔',
   'Not enough money': 'والٹ میں رقم کم ہے',
   'Another shop costs {fee}, and your Fazl wallet has {balance}. Add money first.': 'ایک اور دکان کی فیس {fee} ہے، اور آپ کے فضل والٹ میں {balance} ہیں۔ پہلے رقم شامل کریں۔',
   'Pay {amount}?': '{amount} ادا کریں؟',
